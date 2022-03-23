@@ -1,0 +1,9 @@
+{
+    "name": "HUDRevamp",
+    "description": "A mod that revamps the HUD and adds tons of new customizability options.",
+    "website_url": "https://github.com/EladNLG/HUDRevamp",
+    "dependencies": [
+        "EladNLG-ModSettings-1.0.0"
+    ],
+    "version_number": "1.1.0"
+}
