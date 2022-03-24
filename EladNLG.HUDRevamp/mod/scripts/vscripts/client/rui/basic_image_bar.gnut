@@ -8,6 +8,8 @@ global function GetConVarFloat2
 global function GetConVarFloat3
 global function CreateWorldTopo
 
+bool enableVerbosePrinting = false
+
 vector function GetConVarFloat2(string convar)
 {
     array<string> value = split( GetConVarString(convar), " " )
@@ -53,7 +55,7 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     }
     else 
     {
-        result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position + <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale )
+        result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale, eDirection.right )
         BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
     }
 
@@ -81,6 +83,10 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
 
 BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right)
 {
+    if (hudWidth < 0 || hudHeight < 0)
+    {
+        throw "hudWidth and hudHeight must be positive! They were " + hudWidth + " and " + hudHeight
+    }
     float height = COCKPIT_RUI_HEIGHT * hudHeight
     float width = COCKPIT_RUI_WIDTH * hudWidth
     // we keep roll as-is in case we want a bar that goes down/up or right to left.
@@ -121,6 +127,7 @@ void function BasicImageBar_UpdateSegmentCount( BarTopoData data, int segmentCou
     }
 
     float segmentDistance = segDistance / data.size.x
+    printt("UPDATING SEGMENTS: " + segmentCount + "\nDIRECTION:" + data.direction)
     if (data.direction == eDirection.down || data.direction == eDirection.up)
         segmentDistance = segDistance / data.size.y
     
@@ -170,15 +177,22 @@ void function BasicImageBar_UpdateSegmentCount( BarTopoData data, int segmentCou
                 topoData.angles = data.angles + <0, starts[i] * data.size.x + (ends[i] - starts[i]) * data.size.x / 2 - data.size.x / 2, 0>
                 topoData.size = <(ends[i] - starts[i]) * data.size.x, data.size.y, 0>
 
+                enableVerbosePrinting = true
                 topoData.topo = CreateBar( topoData.position, 
                     topoData.angles, 
                     topoData.size.x, 
                     topoData.size.y )
+                printt("CREATED TOPO: " + topoData.angles + " " + topoData.size)
+
+                enableVerbosePrinting = false
 
                 data.topoData.append(topoData)
             }
+            break
         case eDirection.up:
         case eDirection.down:
+            if (data.topoData.len() > 0)
+                throw "??????????"
             for (int i = 0; i < segmentCount; i++)
             {
                 TopoData topoData
@@ -211,6 +225,14 @@ vector function RotateVector( vector vec, vector rotateAngles )
 
 var function CreateBar( vector posOffset, vector angles, float hudWidth, float hudHeight )
 {
+    if (hudWidth < 0 || hudHeight < 0)
+    {
+        throw "hudWidth and hudHeight must be positive! They were " + hudWidth + " and " + hudHeight
+    }
+    if (enableVerbosePrinting)
+    {
+        printt("Creating bar at " + posOffset + " with angles " + angles + " and size " + hudWidth + "x" + hudHeight)
+    }
     return RuiTopology_CreateSphere( 
         COCKPIT_RUI_OFFSET + posOffset, // 
         AnglesToRight( angles ), // right
@@ -250,6 +272,7 @@ var function BasicImageBar_SetFillFrac(BarTopoData barData, float progress)
     switch (barData.direction)
     {
         case eDirection.right:
+            float yPos = barData.topoData[0].size.y
             for (int i = barData.segments - 1; i >= 0; i--)
             {
                 TopoData data = barData.topoData[i]
@@ -259,21 +282,25 @@ var function BasicImageBar_SetFillFrac(BarTopoData barData, float progress)
                 float minProgress = float(barData.segments - i - 1) / barData.segments
                 float maxProgress = minProgress + (1.0 / barData.segments)
                 float segProgress = Graph( progress, minProgress, maxProgress, 0.0, 1.0 )
+                if (yPos != data.size.y)
+                {
+                    //throw "???????"
+                }
                 // this segment is supposed to be full
                 if (progress >= maxProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles ), AnglesToUp( data.angles ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 3 )
                 }
                 else if (progress > minProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles - <0, data.size.x * segProgress / 2 - data.size.x / 2, 0> ), AnglesToUp( data.angles - <0, data.size.x * segProgress / 2 - data.size.x / 2, 0> ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x * segProgress, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x * segProgress, data.size.y, 3 )
                 }
                 else 
                 {
                     // no need to update position since we update it then we "unhide" the topo, just set width to 0.
-                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 3 )
                 }
             }
             break
@@ -291,17 +318,17 @@ var function BasicImageBar_SetFillFrac(BarTopoData barData, float progress)
                 if (progress >= maxProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles ), AnglesToUp( data.angles ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 3 )
                 }
                 else if (progress > minProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles + <0, data.size.x * segProgress / 2 - data.size.x / 2, 0> ), AnglesToUp( data.angles + <0, data.size.x * segProgress / 2 - data.size.x / 2, 0> ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x * segProgress, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x * segProgress, data.size.y, 3 )
                 }
                 else 
                 {
                     // no need to update position since we update it then we "unhide" the topo, just set width to 0.
-                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 3 )
                 }
             }
             break
@@ -319,17 +346,17 @@ var function BasicImageBar_SetFillFrac(BarTopoData barData, float progress)
                 if (progress >= maxProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles ), AnglesToUp( data.angles ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 3 )
                 }
                 else if (progress > minProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles - <data.size.y * segProgress / 2 - data.size.y / 2, 0, 0> ), AnglesToUp( data.angles - <data.size.y * segProgress / 2 - data.size.y / 2, 0, 0> ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y * segProgress, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y * segProgress, 3 )
                 }
                 else 
                 {
                     // no need to update position since we update it then we "unhide" the topo, just set width to 0.
-                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 3 )
                 }
             }
             break
@@ -348,17 +375,17 @@ var function BasicImageBar_SetFillFrac(BarTopoData barData, float progress)
                 if (progress >= maxProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles ), AnglesToUp( data.angles ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y, 3 )
                 }
                 else if (progress > minProgress)
                 {
                     RuiTopology_UpdatePos( data.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles + <data.size.y * segProgress / 2 - data.size.y / 2, 0, 0> ), AnglesToUp( data.angles + <data.size.y * segProgress / 2 - data.size.y / 2, 0, 0> ) * -1 )
-                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y * segProgress, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, data.size.x, data.size.y * segProgress, 3 )
                 }
                 else 
                 {
                     // no need to update position since we update it then we "unhide" the topo, just set width to 0.
-                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 10 )
+                    RuiTopology_UpdateSphereArcs( data.topo, 0, 0, 3 )
                 }
             }
             break
@@ -438,8 +465,9 @@ BarTopoData function BasicImageBar_UpdatePosition( BarTopoData data, vector newP
 
                     RuiTopology_UpdatePos( topoData.topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( topoData.angles ), AnglesToUp( topoData.angles ) * -1)
                     
-                    RuiTopology_UpdateSphereArcs( topoData.topo, topoData.size.x, topoData.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( topoData.topo, topoData.size.x, topoData.size.y, 3 )
                 }
+                break
             case eDirection.up:
             case eDirection.down:
                 for (int i = 0; i < data.segments; i++)
@@ -453,7 +481,7 @@ BarTopoData function BasicImageBar_UpdatePosition( BarTopoData data, vector newP
                     RuiTopology_UpdatePos( topoData.topo, COCKPIT_RUI_OFFSET + topoData.position, AnglesToRight( topoData.angles ), 
                         AnglesToUp( topoData.angles ) * -1)
                         
-                    RuiTopology_UpdateSphereArcs( topoData.topo, topoData.size.x, topoData.size.y, 10 )
+                    RuiTopology_UpdateSphereArcs( topoData.topo, topoData.size.x, topoData.size.y, 3 )
                 
                 }
         }
@@ -468,7 +496,7 @@ BarTopoData function BasicImageBar_UpdatePosition( BarTopoData data, vector newP
         RuiTopology_UpdatePos( data.topoData[0].topo, COCKPIT_RUI_OFFSET + data.position, AnglesToRight( data.angles ), 
                         AnglesToUp( data.angles ) * -1)
                         
-        RuiTopology_UpdateSphereArcs( data.topoData[0].topo, data.size.x, data.size.y, 10 )
+        RuiTopology_UpdateSphereArcs( data.topoData[0].topo, data.size.x, data.size.y, 3 )
     }
     return data
 }
@@ -533,6 +561,7 @@ BarTopoData function BasicImageBar_UpdatePosition_NoUpdateTopo( BarTopoData data
                     data.topoData[i].angles = data.angles + <0, starts[i] * data.size.x + (ends[i] - starts[i]) * data.size.x / 2 - data.size.x / 2, 0>
                     data.topoData[i].size = <(ends[i] - starts[i]) * data.size.x, data.size.y, 0>
                 }
+                break
             case eDirection.up:
             case eDirection.down:
                 for (int i = 0; i < data.segments; i++)
@@ -580,11 +609,14 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
 
         if (GetConVarBool("comp_hud_vertical_side_bar"))
         {
+            data["bar"].direction = eDirection.up
             data["bar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bar"], GetConVarFloat2(posConVar) - <0.021 * scale, 0.0, 0>, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) / 1.7665 * scale, 0.09 * scale )
             //BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.005 )
         }
         else 
         {
+            data["bar"].direction = eDirection.right
+            //BasicImageBar_UpdateSegmentCount(data["bar"], data["bar"].segments, data["bar"].segmentDistance)
             data["bar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bar"], GetConVarFloat2(posConVar) + <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale )
             //BasicImageBar_UpdateSegmentCount( result["bar"], 2, xScalar )
         }
@@ -593,4 +625,16 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
 
         WaitFrame()
     }
+}
+
+void function UpdateBar( var topo, vector posOffset, vector angles, float hudWidth, float hudHeight )
+{
+    if (hudWidth < 0 || hudHeight < 0)
+    {
+        throw "hudWidth and hudHeight must be positive! They were " + hudWidth + " and " + hudHeight
+    }
+
+    RuiTopology_UpdatePos( topo, COCKPIT_RUI_OFFSET + posOffset, AnglesToRight( angles ), 
+        AnglesToUp( angles ) * -1 )
+    RuiTopology_UpdateSphereArcs( topo, hudWidth, hudHeight, 3 )
 }

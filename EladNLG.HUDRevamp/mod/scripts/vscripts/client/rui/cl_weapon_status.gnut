@@ -776,9 +776,10 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 
 	if (maxCharges != bar["bar"].segments)
 	{
+		print("bar")
 		BasicImageBar_UpdateSegmentCount(bar["bar"], maxCharges, 0.05)
+		print("bgbar")
 		BasicImageBar_UpdateSegmentCount(bar["bgBar"], maxCharges, 0.05)
-		
 	}
 	foreach (var rui in bar["bgBar"].imageRuis)
 	{
