@@ -66,8 +66,6 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
     
     result["bgBar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale, eDirection.up )
-    RuiDestroy( result["bgBar"].imageRuis[0] )
-    result["bgBar"].imageRuis[0] = RuiCreate( $"ui/knowledgebase_panel.rpak", result["bgBar"].topoData[0].topo, RUI_DRAW_COCKPIT, -1 )
 
     BasicImageBar_UpdateSegmentCount( result["bgBar"], 2, xScalar )
     foreach (var rui in result["bgBar"].imageRuis)

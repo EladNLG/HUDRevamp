@@ -148,7 +148,7 @@ void function Thread_StackingDamageFlyoutText()
 
 void function PlayerDidDamageText( float damage, vector damagePosition, entity victim, bool isCrit, bool isIneffective )
 {
-	if (Time() - lastOutgoingDamageTextHitTime > 0.8)
+	if (Time() - lastOutgoingDamageTextHitTime > 1.3)
 	{
 		ResetStackingDamageFlyoutText( damage, isCrit, victim )
 	}
