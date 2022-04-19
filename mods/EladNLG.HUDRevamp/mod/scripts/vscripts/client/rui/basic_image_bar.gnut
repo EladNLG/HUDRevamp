@@ -66,22 +66,24 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
     
     result["bgBar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale, eDirection.up )
+    RuiDestroy( result["bgBar"].imageRuis[0] )
+    result["bgBar"].imageRuis[0] = RuiCreate( $"ui/knowledgebase_panel.rpak", result["bgBar"].topoData[0].topo, RUI_DRAW_COCKPIT, -1 )
 
     BasicImageBar_UpdateSegmentCount( result["bgBar"], 2, xScalar )
     foreach (var rui in result["bgBar"].imageRuis)
     {
-        RuiSetFloat3( rui, "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 * 0.5)
+        RuiSetFloat3( rui, "basicImageColor", GetConVarFloat3("comp_hud_ability_bg_color") / 255.0)
         RuiSetFloat( rui, "basicImageAlpha", 0.1) 
     }
     foreach(var rui in result["bar"].imageRuis)
     {
-        RuiSetFloat3(rui, "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+        RuiSetFloat3(rui, "basicImageColor", GetAccentColor() )
     }
     
     return result
 }
 
-BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right)
+BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right, bool createRui = true, int order = -1)
 {
     if (hudWidth < 0 || hudHeight < 0)
     {
@@ -109,8 +111,11 @@ BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles
     data.topoData = [ topoData ]
     data.fill = 1
 
-    var rui = RuiCreate( $"ui/basic_image.rpak", data.topoData[0].topo, RUI_DRAW_COCKPIT, -1 )
-    data.imageRuis.append(rui)
+    if (createRui)
+    {
+        var rui = RuiCreate( $"ui/basic_image.rpak", data.topoData[0].topo, RUI_DRAW_COCKPIT, order )
+        data.imageRuis.append(rui)
+    }
 
     return data
 }
@@ -127,7 +132,7 @@ void function BasicImageBar_UpdateSegmentCount( BarTopoData data, int segmentCou
     }
 
     float segmentDistance = segDistance / data.size.x
-    printt("UPDATING SEGMENTS: " + segmentCount + "\nDIRECTION:" + data.direction)
+    //printt("UPDATING SEGMENTS: " + segmentCount + "\nDIRECTION:" + data.direction)
     if (data.direction == eDirection.down || data.direction == eDirection.up)
         segmentDistance = segDistance / data.size.y
     
@@ -177,14 +182,11 @@ void function BasicImageBar_UpdateSegmentCount( BarTopoData data, int segmentCou
                 topoData.angles = data.angles + <0, starts[i] * data.size.x + (ends[i] - starts[i]) * data.size.x / 2 - data.size.x / 2, 0>
                 topoData.size = <(ends[i] - starts[i]) * data.size.x, data.size.y, 0>
 
-                enableVerbosePrinting = true
                 topoData.topo = CreateBar( topoData.position, 
                     topoData.angles, 
                     topoData.size.x, 
                     topoData.size.y )
-                printt("CREATED TOPO: " + topoData.angles + " " + topoData.size)
-
-                enableVerbosePrinting = false
+                //printt("CREATED TOPO: " + topoData.angles + " " + topoData.size)
 
                 data.topoData.append(topoData)
             }

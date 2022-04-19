@@ -1,6 +1,6 @@
 {
     "Name": "HUD Revamp",
-    "LoadPriority": 2,
+    "LoadPriority": 5,
     "Version": "1.0.0",
     "Description": "pAIN\ntest",
     "Scripts": [
@@ -90,6 +90,11 @@
             "Flags": 16777216
         },
         {
+            "Name": "comp_hud_ability_bg_color",
+            "DefaultValue": "128 128 128",
+            "Flags": 16777216
+        },
+        {
             "Name": "comp_hud_ability_icon_scale",
             "DefaultValue": "0.9",
             "Flags": 16777216
@@ -107,6 +112,12 @@
         {
             "Name": "comp_hud_health_text_color",
             "DefaultValue": "255 255 255",
+            "Flags": 16777216
+        }
+        ,
+        {
+            "Name": "comp_hud_pilot_healthbar",
+            "DefaultValue": "0",
             "Flags": 16777216
         }
     ]

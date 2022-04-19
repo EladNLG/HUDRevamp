@@ -6,6 +6,11 @@ global function ClWeaponStatus_RefreshWeaponStatus
 global function UpdateOffhandUIPrefab
 global function GetOffhandUI
 global function TestRuiTopo
+global function GetAccentColor
+
+const RUI_TEXT_CENTER = $"ui/cockpit_console_text_center.rpak"
+const RUI_TEXT_LEFT = $"ui/cockpit_console_text_top_left.rpak"
+const RUI_TEXT_RIGHT = $"ui/cockpit_console_text_top_right.rpak"
 
 global struct TopoData {
     vector position = Vector( 0.0, 0.0, 0.0 )
@@ -42,6 +47,7 @@ struct
 
 	table<string, var> ruis
 	table< string, table<string, BarTopoData> > offhandUIPrefabs
+	table<string, BarTopoData> bars
 	entity selectedWeapon = null
 	float curHealthAlpha = 0.9
 	float curShieldAlpha = 0.0
@@ -131,7 +137,7 @@ void function UpdateThread()
 void function InitHealthRuis()
 {
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoTitanCockpitHud, RUI_DRAW_COCKPIT, 5 )
+		var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoTitanCockpitHud, RUI_DRAW_COCKPIT, 5 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", settings.healthPos )
@@ -143,7 +149,7 @@ void function InitHealthRuis()
 		file.ruis["health"] <- rui
 	}
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoTitanCockpitHud, RUI_DRAW_COCKPIT, 5 )
+		var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoTitanCockpitHud, RUI_DRAW_COCKPIT, 5 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", settings.shieldPos )
@@ -154,6 +160,26 @@ void function InitHealthRuis()
 		RuiSetFloat( rui, "thicken", 0.0 )
 		file.ruis["shield"] <- rui
 	}
+	
+	{
+		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 5 )
+		RuiSetInt( rui, "maxLines", 1 )
+		RuiSetInt( rui, "lineNum", 1 )
+		RuiSetFloat2( rui, "msgPos", <0.65, 0.74, 0> )
+		RuiSetFloat3( rui, "msgColor", GetAccentColor() )
+		RuiSetString( rui, "msgText", "2500" )
+		RuiSetFloat( rui, "msgFontSize", 72.0 )
+		RuiSetFloat( rui, "msgAlpha", 0.9 )
+		RuiSetFloat( rui, "thicken", 0.0 )
+		file.ruis["healthText"] <- rui
+	}
+
+	BarTopoData data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, 0.2, 0.055 )
+	BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
+	file.bars["healthBG"] <- data
+	data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, 0.2, 0.055 )
+	BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
+	file.bars["health"] <- data
 	AddUpdateCallback( UpdateHealthDisplays )
 }
 
@@ -163,7 +189,7 @@ void function UpdateHealthDisplays( float deltaTime )
 {
 	entity player = GetLocalViewPlayer()
 
-	if (!IsValid(player)) return
+	if (!IsValid(player) || !player.IsPlayer()) return
 	if (!IsAlive(player))
 	{
 		RuiSetFloat( file.ruis["health"], "msgAlpha", 0.0 )
@@ -200,6 +226,33 @@ void function UpdateHealthDisplays( float deltaTime )
 	}
 
 	RuiSetString(file.ruis["health"], "msgText", player.GetHealth().tostring())
+
+	////////////////
+	// BAR UPDATE //
+	////////////////
+
+	if (player.IsTitan() || !GetConVarBool("comp_hud_pilot_healthbar"))
+	{
+		BasicImageBar_SetFillFrac( file.bars["health"], 0.0 )
+		BasicImageBar_SetFillFrac( file.bars["healthBG"], 0.0 )
+		RuiSetString( file.ruis["healthText"], "msgText", "" )
+	}
+	else
+	{
+		BasicImageBar_SetFillFrac( file.bars["health"], float(player.GetHealth()) / float(player.GetMaxHealth()) )
+		BasicImageBar_SetFillFrac( file.bars["healthBG"], 1.0 )
+		RuiSetString( file.ruis["healthText"], "msgText", player.GetHealth().tostring() )
+	}
+
+	foreach (var rui in file.bars["health"].imageRuis)
+	{
+		RuiSetFloat3( rui, "basicImageColor", GetAccentColor() )
+	}
+	foreach (var rui in file.bars["healthBG"].imageRuis)
+	{
+		RuiSetFloat3( rui, "basicImageColor", <0,0,0> )
+		RuiSetFloat(rui, "basicImageAlpha", 0.5)
+	}
 }
 
 float function LerpFloat( float a, float b, float t)
@@ -212,7 +265,7 @@ float function LerpFloat( float a, float b, float t)
 
 void function InitAmmoCounterRui()
 {
-	var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+	var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 1 )
 	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") )
@@ -224,7 +277,7 @@ void function InitAmmoCounterRui()
 	AddUpdateCallback( UpdateAmmoCounter )
 
 	// "AMMO" below the counter
-	rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+	rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 1 )
 	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.0, 0.1, 0.0> )
@@ -235,7 +288,7 @@ void function InitAmmoCounterRui()
 
 	file.ruis["ammoDisplay"] <- rui
 	
-	rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+	rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 0 )
 	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.025, 0.1, 0.0> )
@@ -251,7 +304,7 @@ void function UpdateAmmoCounter( float deltaTime )
 {
 	entity player = GetLocalViewPlayer()
 
-	if (!IsValid(player)) return
+	if (!IsValid(player) || !player.IsPlayer()) return
 	
 	entity weapon = file.selectedWeapon
 
@@ -266,11 +319,11 @@ void function UpdateAmmoCounter( float deltaTime )
 	
 	// REAL-TIME SETTING - COLOR
 	RuiSetFloat3(file.ruis["ammo"], "msgColor", 
-		(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 	RuiSetFloat3(file.ruis["ammoDisplay"], "msgColor", 
-		(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 	RuiSetFloat3(file.ruis["stockpile"], "msgColor", 
-		(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 	
 	// REAL-TIME SETTING - POSITION
 	RuiSetFloat2( file.ruis["ammo"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") )
@@ -283,7 +336,7 @@ void function UpdateAmmoCounter( float deltaTime )
 void function InitHolsteredWeapons()
 {
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_top_left.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_holstered_weapons_pos") - <0.0, 0.025, 0.0> )
@@ -296,7 +349,7 @@ void function InitHolsteredWeapons()
 	}
 
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_top_left.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_holstered_weapons_pos") + <0.0, 0.025, 0.0> )
@@ -316,7 +369,7 @@ void function UpdateHolsteredWeapons( float deltaTime )
 	entity weapon = file.selectedWeapon
 	if (!IsValid(weapon)) return
 	entity player = weapon.GetOwner()
-	if (!IsValid(player)) return
+	if (!IsValid(player) || !player.IsPlayer()) return
 	if (player != GetLocalClientPlayer()) return
 	foreach(entity w in player.GetOffhandWeapons()){
 		if (weapon == w) return
@@ -338,14 +391,14 @@ void function UpdateHolsteredWeapons( float deltaTime )
 				case 0:
 					entity displayWeapon = player.GetMainWeapons()[1]
 					RuiSetFloat3(rui, "msgColor", 
-						(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary1% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 				// display primary
 				default:
 					entity displayWeapon = player.GetMainWeapons()[0] 
 					RuiSetFloat3(rui, "msgColor", 
-						(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary0% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 
@@ -366,14 +419,14 @@ void function UpdateHolsteredWeapons( float deltaTime )
 				case 2:
 					entity displayWeapon = player.GetMainWeapons()[1] 
 					RuiSetFloat3(rui, "msgColor", 
-						(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary1% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 				// display anti-titan
 				default:
 					entity displayWeapon = player.GetMainWeapons()[2] 
 					RuiSetFloat3(rui, "msgColor", 
-						(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod ) ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0))
+						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary2% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 
@@ -385,6 +438,11 @@ void function UpdateHolsteredWeapons( float deltaTime )
 			RuiSetString(rui, "msgText", "")
 		}
 	}
+}
+
+vector function GetAccentColor(bool boost = false)
+{
+	return (boost ? GetConVarFloat3("comp_hud_boost_text_color") / 255.0 : GetConVarFloat3("comp_hud_accent_color") / 255.0)
 }
 
 void function OnSelectedWeaponChanged( entity selectedWeapon )
@@ -458,7 +516,7 @@ void function InitOffhandRuis()
 {
 	// TEXTS
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 0 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ordnance_position") + GetConVarFloat2("comp_hud_ability_cooldown_pos_offset") )
@@ -470,7 +528,7 @@ void function InitOffhandRuis()
 	}
 
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 0 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_tactical_position") + GetConVarFloat2("comp_hud_ability_cooldown_pos_offset") )
@@ -482,7 +540,7 @@ void function InitOffhandRuis()
 	}
 
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 0 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_utility_position") + GetConVarFloat2("comp_hud_ability_cooldown_pos_offset") )
@@ -494,7 +552,7 @@ void function InitOffhandRuis()
 	}
 
 	{
-		var rui = RuiCreate( $"ui/cockpit_console_text_top_left.rpak", clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
+		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", <0.01, 0.56, 0.0> )
@@ -532,7 +590,7 @@ void function InitOffhandRuis()
 void function UpdateOffhandRuis( float deltaTime )
 {
 	entity player = GetLocalViewPlayer()
-	if (!IsValid(player)) return
+	if (!IsValid(player) || !player.IsPlayer()) return
 	for (int i = 0; i < 3; i++)
 	{
 		var rui = file.ruis["offhand" + i]
@@ -773,12 +831,11 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	
 	float cooldown = max(timeUntilNextCharge, altCooldown)
 	maxCharges = int( max(1, maxCharges) )
+	if (maxCharges > 5) maxCharges = 1
 
 	if (maxCharges != bar["bar"].segments)
 	{
-		print("bar")
 		BasicImageBar_UpdateSegmentCount(bar["bar"], maxCharges, 0.05)
-		print("bgbar")
 		BasicImageBar_UpdateSegmentCount(bar["bgBar"], maxCharges, 0.05)
 	}
 	foreach (var rui in bar["bgBar"].imageRuis)
@@ -851,19 +908,36 @@ table<string, BarTopoData> function GetOffhandUI(int slot)
 void function TestRuiTopo()
 {
 	var testTopo = CreateWorldTopo( 
-		GetLocalViewPlayer().GetViewModelEntity().GetAttachmentOrigin(GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")), GetLocalViewPlayer().GetViewModelEntity().GetAttachmentAngles(GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")), 16000, 9000
+		<0,100,0>, 
+		<0, 0, 0>, 160, 90
 	)
 
-	var rui = RuiCreate( $"ui/cockpit_console_text_center.rpak", testTopo, RUI_DRAW_WORLD, 5 )
+	printt(GetLocalViewPlayer().GetViewModelEntity().GetAttachmentAngles(GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")))
+	printt(GetLocalViewPlayer().CameraPosition())
+	var rui = RuiCreate( RUI_TEXT_CENTER, testTopo, RUI_DRAW_COCKPIT, 5 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 0 )
 	//RuiSetFloat2( rui, "msgPos", <0,0,0> )
 	RuiSetFloat3( rui, "msgColor", GetConVarFloat3("comp_hud_accent_color") )
 	RuiSetString( rui, "msgText", "10000" )
-	RuiSetFloat( rui, "msgFontSize", 96.0 )
+	RuiSetFloat( rui, "msgFontSize", 1000.0 )
 	RuiSetFloat( rui, "msgAlpha", 0.9 )
 	RuiSetFloat( rui, "thicken", 0.0 )
 
 	// no idea if this'll work
-	RuiTopology_SetParent( testTopo, GetLocalViewPlayer().GetViewModelEntity() )
+	//RuiTopology_SetParent( testTopo, GetLocalViewPlayer().GetViewModelEntity() )
+	thread Test_Update(testTopo)
+}
+
+void function Test_Update(var topo)
+{
+	while (true)
+	{
+		print(GetLocalViewPlayer().CameraPosition() -GetLocalViewPlayer().GetViewModelEntity().GetAttachmentOrigin(
+				GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")
+			))
+		RuiTopology_UpdatePos( topo, <0, 100, 0>, <0, -160, 0>, <0,0,-90>
+		)
+		wait 0.1
+	}
 }
