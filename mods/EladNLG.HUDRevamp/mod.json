@@ -119,6 +119,46 @@
             "Name": "comp_hud_pilot_healthbar",
             "DefaultValue": "0",
             "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_boost_position",
+            "DefaultValue": "-0.29 0.2",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_titan_meter_offset",
+            "DefaultValue": "0 0",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_titan_meter_scale",
+            "DefaultValue": "1 1",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_pilot_healthbar_pos",
+            "DefaultValue": "0.25 0.4",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_pilot_healthbar_size",
+            "DefaultValue": "0.2 0.025",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_wpd",
+            "DefaultValue": "0",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_wpd_pos", 
+            "DefaultValue": "0.1 0.4",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_wpd_size",
+            "DefaultValue": "48",
+            "Flags": 16777216
         }
     ]
 }

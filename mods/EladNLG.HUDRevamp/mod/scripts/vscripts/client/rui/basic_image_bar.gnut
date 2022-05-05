@@ -4,6 +4,7 @@ global function BasicImageBar_CreateRuiTopo
 global function BasicImageBar_UpdateSegmentCount
 global function BasicImageBar_UpdateOffhandUI
 global function BasicImageBar_SetFillFrac
+global function BasicImageBar_UpdatePosition
 global function GetConVarFloat2
 global function GetConVarFloat3
 global function CreateWorldTopo
@@ -67,7 +68,7 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     
     result["bgBar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale, eDirection.up )
 
-    BasicImageBar_UpdateSegmentCount( result["bgBar"], 2, xScalar )
+    //BasicImageBar_UpdateSegmentCount( result["bgBar"], 2, xScalar )
     foreach (var rui in result["bgBar"].imageRuis)
     {
         RuiSetFloat3( rui, "basicImageColor", GetConVarFloat3("comp_hud_ability_bg_color") / 255.0)
@@ -79,6 +80,53 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     }
     
     return result
+}
+
+void function BasicImageBar_SetColor( BarTopoData data, vector color, float alpha = 1.0 )
+{
+    foreach (var rui in data.imageRuis)
+    {
+        RuiSetFloat( rui, "basicImageAlpha", alpha) 
+        RuiSetFloat3( rui, "basicImageColor", color) 
+    }
+}
+
+BarTopoData function BasicImageBar_CreateRuiTopo_Flat( vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right, bool createRui = true, int order = -1 )
+{
+    if (hudWidth < 0 || hudHeight < 0)
+    {
+        throw "hudWidth and hudHeight must be positive! They were " + hudWidth + " and " + hudHeight
+    }
+    float height = COCKPIT_RUI_HEIGHT * hudHeight
+    float width = COCKPIT_RUI_WIDTH * hudWidth
+    // we keep roll as-is in case we want a bar that goes down/up or right to left.
+    vector _angles = Vector( angles.y * COCKPIT_RUI_HEIGHT, -angles.x * COCKPIT_RUI_WIDTH, angles.z )
+
+    var topo = CreateWorldTopo( posOffset, _angles, width, height )
+
+    BarTopoData data
+    data.position = posOffset
+    data.size = Vector( width, height, 0.0 )
+    data.angles = _angles
+
+    TopoData topoData
+    topoData.position = posOffset
+    topoData.size = Vector( width, height, 0.0 )
+    topoData.angles = _angles
+    topoData.topo = topo
+    data.direction = direction 
+    data.isFlat = true
+
+    data.topoData = [ topoData ]
+    data.fill = 1
+
+    if (createRui)
+    {
+        var rui = RuiCreate( $"ui/basic_image.rpak", data.topoData[0].topo, RUI_DRAW_COCKPIT, order )
+        data.imageRuis.append(rui)
+    }
+
+    return data
 }
 
 BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right, bool createRui = true, int order = -1)
@@ -258,7 +306,7 @@ var function CreateWorldTopo( vector org, vector ang, float width, float height 
 	//DebugDrawAngles( org + right, ang, 10000 )
 	//DebugDrawAngles( org + down, ang, 10000 )
 
-	var topo = RuiTopology_CreatePlane( org, right, down, true )
+	var topo = RuiTopology_CreatePlane( org, right, down, false )
 	return topo
 }
 
@@ -603,7 +651,8 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
         data["bg"] = BasicImageBar_UpdatePosition( data["bg"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * scale )
 
         // gets updated every frame, don't update the topology.
-        data["bgBar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bgBar"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * scale )
+        if (pos != 4)
+            data["bgBar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bgBar"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * scale )
 
         data["icon"] = BasicImageBar_UpdatePosition( data["icon"], GetConVarFloat2(posConVar), xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
 
@@ -621,7 +670,7 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
             //BasicImageBar_UpdateSegmentCount( result["bar"], 2, xScalar )
         }
         
-        UpdateOffhandUIPrefab(pos, data)
+        //UpdateOffhandUIPrefab(pos, data)
 
         WaitFrame()
     }

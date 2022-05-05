@@ -11,22 +11,36 @@ void function HudRevampSettings_Init()
 	AddConVarSetting("comp_hud_ammo_pos", "Ammo Position", "HUD Revamp - General", "float2")
 	AddConVarSetting("comp_hud_holstered_weapons_pos", "Holstered Weapons Position", "HUD Revamp - General", "float2")
 
-	AddConVarSetting("comp_hud_ability_bg_alpha", "Ability Background Alpha", 
-		"HUD Revamp - Abilities General", "float")
-	AddConVarSetting("comp_hud_ability_ui_scale", "Ability UI Scale", "HUD Revamp - Abilities General", "float")
-	AddConVarSetting("comp_hud_ability_bar_thickness", "Ability Progress Bar Thickness", "HUD Revamp - Abilities General", "float")
-	AddConVarSetting("comp_hud_ability_icon_scale", "Ability Icon Scale", "HUD Revamp - Abilities General", "float")
-	AddConVarSetting("comp_hud_ability_bar_empty_color", "Ability Bar Color (Empty)", 
-		"HUD Revamp - Abilities General", "float3")
-	AddConVarSetting("comp_hud_ability_bg_bar_empty_color", "Ability Background Color (Empty)", 
-		"HUD Revamp - Abilities General", "float3")
-	AddConVarSetting("comp_hud_ability_cooldown_pos_offset", "Ability Cooldown Text Position Offset", "HUD Revamp - Abilities General", "float2")
-	AddConVarSettingEnum("comp_hud_vertical_side_bar", "Vertical Ability Side Bar", 
-        "HUD Revamp - Abilities General", [ "No", "Yes" ] )
+	AddConVarSetting("comp_hud_ability_bg_alpha", "Background Alpha", 
+		"HUD Revamp - Abilities", "float")
+	AddConVarSetting("comp_hud_ability_ui_scale", "UI Scale", "HUD Revamp - Abilities", "float")
+	AddConVarSetting("comp_hud_ability_bar_thickness", "Progress Bar Thickness", "HUD Revamp - Abilities", "float")
+	AddConVarSetting("comp_hud_ability_icon_scale", "Icon Scale", "HUD Revamp - Abilities", "float")
+	AddConVarSetting("comp_hud_ability_bar_empty_color", "Bar Color (Empty)", 
+		"HUD Revamp - Abilities", "float3")
+	AddConVarSetting("comp_hud_ability_bg_bar_empty_color", "Background Bar Color (Empty)", 
+		"HUD Revamp - Abilities", "float3")
+	AddConVarSetting("comp_hud_ability_cooldown_pos_offset", "Cooldown Text Position Offset", "HUD Revamp - Abilities", "float2")
+	AddConVarSettingEnum("comp_hud_vertical_side_bar", "Vertical Side Bar", 
+        "HUD Revamp - Abilities", [ "No", "Yes" ] )
 
 	AddConVarSetting("comp_hud_ordnance_position", "Ordnance Position", "HUD Revamp - Ability Specific", "float2")
 	AddConVarSetting("comp_hud_tactical_position", "Tactical Position", "HUD Revamp - Ability Specific", "float2")
 	AddConVarSetting("comp_hud_utility_position", "Titan Utility Position", "HUD Revamp - Ability Specific", "float2")
+	//AddConVarSetting( "comp_hud_boost_icon_scale", "Boost Icon Scale", "HUD Revamp - Ability Specific", "float" )
+	AddConVarSetting( "comp_hud_boost_position", "Boost Position", "HUD Revamp - Ability Specific", "float2" )
+
+	AddConVarSettingEnum( "comp_hud_pilot_healthbar", "Enabled", "HUD Revamp - Pilot Health Bar", [ "No", "Yes" ] )
+	AddConVarSetting( "comp_hud_pilot_healthbar_pos", "Position", "HUD Revamp - Pilot Health Bar", "float2" )
+	AddConVarSetting( "comp_hud_pilot_healthbar_size", "Size", "HUD Revamp - Pilot Health Bar", "float2" )
+	
+	AddConVarSetting( "comp_hud_titan_meter_offset", "Offset", "HUD Revamp - Titan Meter", "float2" )
+	AddConVarSetting( "comp_hud_titan_meter_scale", "Scale", "HUD Revamp - Titan Meter", "float2" )
+
+	AddConVarSettingEnum("comp_hud_wpd", "Enable", 
+        "HUD Revamp - Wallkick Practice Display", [ "No", "Yes" ] )
+	AddConVarSetting("comp_hud_wpd_pos", "Position", "HUD Revamp - Wallkick Practice Display", "float2" )
+	AddConVarSetting("comp_hud_wpd_size", "Font Size", "HUD Revamp - Wallkick Practice Display", "float" )
 
 	//AddConVarSetting("")
 }

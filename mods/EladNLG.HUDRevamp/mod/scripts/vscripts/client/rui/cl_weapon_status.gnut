@@ -29,6 +29,7 @@ global struct BarTopoData {
     array<TopoData> topoData
     int direction
 	float fill
+	bool isFlat = false
 }
 
 global enum eDirection 
@@ -141,7 +142,7 @@ void function InitHealthRuis()
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", settings.healthPos )
-		RuiSetFloat3( rui, "msgColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3( rui, "msgColor", GetAccentColor() )
 		RuiSetString( rui, "msgText", "10000" )
 		RuiSetFloat( rui, "msgFontSize", 32.0 )
 		RuiSetFloat( rui, "msgAlpha", 0.9 )
@@ -173,12 +174,14 @@ void function InitHealthRuis()
 		RuiSetFloat( rui, "thicken", 0.0 )
 		file.ruis["healthText"] <- rui
 	}
-
-	BarTopoData data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, 0.2, 0.055 )
-	BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
+	float xSize = GetConVarFloat2( "comp_hud_pilot_healthbar_size" ).x
+	float ySize = GetConVarFloat2( "comp_hud_pilot_healthbar_size" ).y
+	float vertMultiplier = COCKPIT_RUI_WIDTH / COCKPIT_RUI_HEIGHT
+	BarTopoData data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, (xSize + 0.005), (ySize + 0.005) * vertMultiplier )
+	//BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
 	file.bars["healthBG"] <- data
-	data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, 0.2, 0.055 )
-	BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
+	data = BasicImageBar_CreateRuiTopo( <0,0,0>, <0.25, 0.4, 0>, xSize, ySize * vertMultiplier )
+	//BasicImageBar_UpdateSegmentCount( data, , 0.1 )
 	file.bars["health"] <- data
 	AddUpdateCallback( UpdateHealthDisplays )
 }
@@ -199,7 +202,7 @@ void function UpdateHealthDisplays( float deltaTime )
 	{
 		int shieldHealth = 0;
 		if (player.GetTitanSoul() != null) shieldHealth = player.GetTitanSoul().GetShieldHealth()
-		RuiSetFloat3( file.ruis["health"], "msgColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3( file.ruis["health"], "msgColor", GetAccentColor() )
 		RuiSetFloat( file.ruis["health"], "msgAlpha", player.IsTitan() ? 0.9 : 0.0 )
 		RuiSetFloat2( file.ruis["health"], "msgPos", settings.healthPos + (GetConVarBool("comp_hud_healthbar_overlap") ? <0.0, -0.0225, 0.0> : <0,0,0>))
 		if (shieldHealth > 0)
@@ -239,6 +242,17 @@ void function UpdateHealthDisplays( float deltaTime )
 	}
 	else
 	{
+		float xSize = GetConVarFloat2( "comp_hud_pilot_healthbar_size" ).x
+		float ySize = GetConVarFloat2( "comp_hud_pilot_healthbar_size" ).y
+		float vertMultiplier = COCKPIT_RUI_WIDTH / COCKPIT_RUI_HEIGHT
+		BasicImageBar_UpdatePosition( file.bars["healthBG"], GetConVarFloat2( "comp_hud_pilot_healthbar_pos"),
+			(xSize + 0.005), (ySize + 0.005) * vertMultiplier )
+		//BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
+		BasicImageBar_UpdatePosition( file.bars["health"], GetConVarFloat2( "comp_hud_pilot_healthbar_pos"), 
+			xSize, ySize * vertMultiplier )
+		RuiSetFloat2( file.ruis["healthText"], "msgPos", <0.5, 0.37, 0> + GetConVarFloat2("comp_hud_pilot_healthbar_pos") + <xSize * -0.5, -ySize, 0> )
+		//BasicImageBar_UpdateSegmentCount( data, , 0.1 )
+
 		BasicImageBar_SetFillFrac( file.bars["health"], float(player.GetHealth()) / float(player.GetMaxHealth()) )
 		BasicImageBar_SetFillFrac( file.bars["healthBG"], 1.0 )
 		RuiSetString( file.ruis["healthText"], "msgText", player.GetHealth().tostring() )
@@ -304,7 +318,7 @@ void function UpdateAmmoCounter( float deltaTime )
 {
 	entity player = GetLocalViewPlayer()
 
-	if (!IsValid(player) || !player.IsPlayer()) return
+	if (!IsValid(player) || !player.IsPlayer() || !IsAlive( player )) return
 	
 	entity weapon = file.selectedWeapon
 
@@ -341,7 +355,7 @@ void function InitHolsteredWeapons()
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_holstered_weapons_pos") - <0.0, 0.025, 0.0> )
 		//RuiSetString( rui, "msgText", "P2016 - 13" )
-		RuiSetFloat3( rui, "msgColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3( rui, "msgColor", GetAccentColor() )
 		RuiSetFloat( rui, "msgFontSize", 32.0 )
 		RuiSetFloat( rui, "msgAlpha", 0.9 )
 		RuiSetFloat( rui, "thicken", -0.25 )
@@ -354,7 +368,7 @@ void function InitHolsteredWeapons()
 		RuiSetInt( rui, "lineNum", 1 )
 		RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_holstered_weapons_pos") + <0.0, 0.025, 0.0> )
 		//RuiSetString( rui, "msgText", "CHARGE RIFLE - 22" )
-		RuiSetFloat3( rui, "msgColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3( rui, "msgColor", GetAccentColor() )
 		RuiSetFloat( rui, "msgFontSize", 32.0 )
 		RuiSetFloat( rui, "msgAlpha", 0.9 )
 		RuiSetFloat( rui, "thicken", -0.25 )
@@ -555,10 +569,10 @@ void function InitOffhandRuis()
 		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 		RuiSetInt( rui, "maxLines", 1 )
 		RuiSetInt( rui, "lineNum", 1 )
-		RuiSetFloat2( rui, "msgPos", <0.01, 0.56, 0.0> )
-		RuiSetFloat3( rui, "msgColor", GetConVarFloat3("comp_hud_boost_text_color") / 255.0 )
+		RuiSetFloat2( rui, "msgPos", <0.01, 0.4, 0.0> )
+		RuiSetFloat3( rui, "msgColor", GetAccentColor(true) )
 		RuiSetString( rui, "msgText", "BOOST" )
-		RuiSetFloat( rui, "msgFontSize", 32.0 )
+		RuiSetFloat( rui, "msgFontSize", 48.0 )
 		RuiSetFloat( rui, "msgAlpha", 0.9 )
 		RuiSetFloat( rui, "thicken", -0.25 )
 		file.ruis["offhand4"] <- rui
@@ -582,11 +596,54 @@ void function InitOffhandRuis()
 		file.offhandUIPrefabs["offhand2"] <- prefab
 		thread BasicImageBar_UpdateOffhandUI( prefab, "comp_hud_utility_position", 2 )
 	}
+	// boost prefab is different
+	{
+		vector position = GetConVarFloat2("comp_hud_boost_position")
+		float scale = GetConVarFloat("comp_hud_ability_ui_scale")
+		table<string, BarTopoData> result
+		float xScalar = 0.05
+		float yScalar = 0.1
+		result["bg"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale )
+
+		RuiSetFloat3( result["bg"].imageRuis[0], "basicImageColor", < 0,0,0 >)
+		RuiSetFloat( result["bg"].imageRuis[0], "basicImageAlpha", GetConVarFloat("comp_hud_ability_bg_alpha")) 
+		
+		if (GetConVarBool("comp_hud_vertical_side_bar"))
+		{
+			result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.021 * scale, 0.0, 0>, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) / 1.7665 * scale, 0.09 * scale, eDirection.up )
+			BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
+		}
+		else 
+		{
+			result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale, eDirection.right )
+			BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
+		}
+
+		result["icon"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
+
+		RuiSetFloat( result["icon"].imageRuis[0], "basicImageAlpha", 2) 
+		RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
+		
+		foreach(var rui in result["bar"].imageRuis)
+		{
+			RuiSetFloat3(rui, "basicImageColor", GetAccentColor() )
+		}
+    
+		file.offhandUIPrefabs["offhand4"] <- result
+		thread BasicImageBar_UpdateOffhandUI( result, "comp_hud_boost_position", 4 )
+	}
 
 
 	AddUpdateCallback( UpdateOffhandRuis )
 }
 
+bool isWR = false
+int WRFrames = 0
+float startWRSpeed = 0.0
+float endWRSpeed = 0.0
+//array<float> WRSpeeds = []
+float lastSpeed = 0.0
+int index = 0
 void function UpdateOffhandRuis( float deltaTime )
 {
 	entity player = GetLocalViewPlayer()
@@ -626,19 +683,12 @@ void function UpdateOffhandRuis( float deltaTime )
 			UpdateOffhandRui(rui, bar, player, player.GetOffhandWeapon(i))
 		}
 	}
+	entity boost = player.GetOffhandWeapon(4)
 
-	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetConVarFloat3("comp_hud_boost_text_color") / 255.0 )
-	if (GetConVarBool("sv_cheats"))
+	int segments = 0
+
+	if (IsValid(boost))
 	{
-		RuiSetString(file.ruis["offhand4"], "msgText", "SV_CHEATS 1")
-		return
-	}
-	if (IsValid(player.GetOffhandWeapon(4)))
-	{
-		entity boost = player.GetOffhandWeapon(4)
-
-		int segments = 0
-
 		if ( player.IsTitan() )
 		{
 			segments = player.GetWeaponAmmoStockpile( boost )
@@ -647,15 +697,69 @@ void function UpdateOffhandRuis( float deltaTime )
 		else
 		{
 			//RuiSetInt( rui, "segments", PlayerInventory_ItemCount( player ) )
-			segments = player.GetPlayerNetInt("itemInventoryCount")
+			try
+			{
+				segments = player.GetPlayerNetInt("itemInventoryCount")
+				if (segments > 5) segments = 5 // cap it at 5. I don't even care if you have more than 5 items, use them.
+			}
+			catch (ex)
+			{
+				segments = 1
+			}
+		}
+	}
+	if (segments != 0)
+	{
+		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], segments, 0.05 )
+		
+		RuiSetImage( file.offhandUIPrefabs["offhand4"]["icon"].imageRuis[0], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( boost.GetWeaponClassName(), boost.GetMods(), "hud_icon" ) )
+		
+		foreach ( var image in file.offhandUIPrefabs["offhand4"]["bar"].imageRuis )
+		{
+			RuiSetFloat3( image, "basicImageColor", GetAccentColor(true) )
 		}
 
-		RuiSetString( file.ruis["offhand4"], "msgText", Localize(boost.GetWeaponSettingString( eWeaponVar.readymessage )) + format(" (%i boosts available)", segments) )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 1.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 1.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 1.0 )
 	}
-	else 
+	else
 	{
-		RuiSetString(file.ruis["offhand4"], "msgText", "")
+		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], 1, 0.05 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 0.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 0.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 0.0 )
 	}
+	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetAccentColor(true) )
+	if (GetConVarBool("comp_hud_wpd"))
+	{
+		RuiSetString(file.ruis["offhand4"], "msgText", format( "%.1f km/h",  Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ) ) )
+		RuiSetFloat(file.ruis["offhand4"], "msgFontSize", GetConVarFloat("comp_hud_wpd_size"))
+		RuiSetFloat2(file.ruis["offhand4"], "msgPos", GetConVarFloat2("comp_hud_wpd_pos"))
+		if (player.IsWallRunning())
+		{
+			if (!isWR)
+			{
+				WRFrames = 0
+				isWR = true
+				startWRSpeed = lastSpeed
+			}
+			WRFrames++
+			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" + 
+			format( "%.1f km/h", Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ) ) )
+		}
+		else {
+			if (isWR) endWRSpeed = Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) )
+			isWR = false
+			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" + 
+			format( "%.1f km/h (%+.1f)", Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ), (endWRSpeed - startWRSpeed) / 10.9444 ) )
+
+			lastSpeed = Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) )
+		}
+		return
+	}
+
+	RuiSetString(file.ruis["offhand4"], "msgText", "")
 }
 
 void function OnKillReplayEnded()
@@ -836,27 +940,27 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	if (maxCharges != bar["bar"].segments)
 	{
 		BasicImageBar_UpdateSegmentCount(bar["bar"], maxCharges, 0.05)
-		BasicImageBar_UpdateSegmentCount(bar["bgBar"], maxCharges, 0.05)
+		//BasicImageBar_UpdateSegmentCount(bar["bgBar"], maxCharges, 0.05)
 	}
 	foreach (var rui in bar["bgBar"].imageRuis)
 	{
-		RuiSetFloat3( rui, "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 * 0.5)
+		RuiSetFloat3( rui, "basicImageColor", GetAccentColor() * 0.5)
 		RuiSetFloat( rui, "basicImageAlpha", 0.1) 
 	}
 	foreach(var rui in bar["bar"].imageRuis)
 	{
-		RuiSetFloat3(rui, "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3(rui, "basicImageColor", GetAccentColor() )
 	}
 	BasicImageBar_SetFillFrac(bar["bar"], ammoFrac)
 	BasicImageBar_SetFillFrac(bar["bgBar"], ammoFrac % 1.0)
 	if (ammoFrac < minFracToUse)
 	{
-		RuiSetFloat3(bar["bgBar"].imageRuis[maxCharges - 1], "basicImageColor", GetConVarFloat3("comp_hud_ability_bg_bar_empty_color") / 255.0)
+		RuiSetFloat3(bar["bgBar"].imageRuis[0], "basicImageColor", GetConVarFloat3("comp_hud_ability_bg_bar_empty_color") / 255.0)
 		RuiSetFloat3(bar["bar"].imageRuis[maxCharges - 1], "basicImageColor", GetConVarFloat3("comp_hud_ability_bar_empty_color") / 255.0)
 	}
 	else {
-		RuiSetFloat3(bar["bgBar"].imageRuis[maxCharges - 1], "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 * 0.5)
-		RuiSetFloat3(bar["bar"].imageRuis[maxCharges - 1], "basicImageColor", GetConVarFloat3("comp_hud_accent_color") / 255.0 )
+		RuiSetFloat3(bar["bgBar"].imageRuis[0], "basicImageColor", GetAccentColor() * 0.5)
+		RuiSetFloat3(bar["bar"].imageRuis[maxCharges - 1], "basicImageColor", GetAccentColor() )
 	}
 	RuiSetFloat(bar["bg"].imageRuis[0], "basicImageAlpha", GetConVarFloat("comp_hud_ability_bg_alpha"))
 
