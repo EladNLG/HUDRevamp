@@ -4,6 +4,8 @@ void function HudRevampSettings_Init()
 {
     printt("Adding settings :D")
 	AddConVarSetting("comp_hud_accent_color", "Accent Color", "HUD Revamp - General", "float3")
+	AddConVarSettingEnum("comp_hud_healthbar", "Titan Numerical Healthbar", 
+        "HUD Revamp - General", [ "No", "Yes" ] )
 	AddConVarSettingEnum("comp_hud_healthbar_overlap", "Health Number Overlap With Bar", 
         "HUD Revamp - General", [ "No", "Yes" ] )
 	AddConVarSetting("comp_hud_boost_text_color", "Amped/Boost Display Color", "HUD Revamp - General", "float3")
@@ -41,6 +43,14 @@ void function HudRevampSettings_Init()
         "HUD Revamp - Wallkick Practice Display", [ "No", "Yes" ] )
 	AddConVarSetting("comp_hud_wpd_pos", "Position", "HUD Revamp - Wallkick Practice Display", "float2" )
 	AddConVarSetting("comp_hud_wpd_size", "Font Size", "HUD Revamp - Wallkick Practice Display", "float" )
+
+	AddConVarSettingEnum( "comp_hud_damage_indicator", "Enabled", "HUD Revamp - Damage Indicator", [ "No", "Yes" ] )
+	AddConVarSetting( "comp_hud_damage_indicator_duration", "Duration", "HUD Revamp - Damage Indicator", "float" )
+	AddConVarSetting( "comp_hud_damage_indicator_fade_time", "Fade Time", "HUD Revamp - Damage Indicator", "float" )
+
+	AddConVarSettingEnum( "comp_hud_incoming_damage_indicator", "Enabled", "HUD Revamp - Incoming Damage Indicator", [ "No", "Yes" ] )
+	AddConVarSetting( "comp_hud_incoming_damage_indicator_duration", "Duration", "HUD Revamp - Incoming Damage Indicator", "float" )
+	AddConVarSetting( "comp_hud_incoming_damage_indicator_fade_time", "Fade Time", "HUD Revamp - Incoming Damage Indicator", "float" )
 
 	//AddConVarSetting("")
 }

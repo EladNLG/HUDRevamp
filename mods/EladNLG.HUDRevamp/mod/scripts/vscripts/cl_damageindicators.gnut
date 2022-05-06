@@ -2,22 +2,23 @@ global function Cl_DamageIndicator_Init
 global function PlayerDidDamageText
 // ()
 const vector OUTGOING_DAMAGE_TEXT_BEGIN_POS = <0.525, 0.4, 0>
-const float OUTGOING_DAMAGE_TEXT_SMALL_FADE_TIME = 0.5
-const float OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME = 0.5
-const float OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME = 0.8
+float OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME = 0.5
+float OUTGOING_DAMAGE_TEXT_STACKING_DURATION = 1.3
+float OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME = 0.8
 
 const vector INCOMING_DAMAGE_TEXT_BEGIN_POS = <0.63, 0.5 - 0.3, 0>
-const float INCOMING_DAMAGE_TEXT_SMALL_FADE_TIME = 0.5
-const float INCOMING_DAMAGE_TEXT_STACKING_FADE_TIME = 0.5
-const float INCOMING_DAMAGE_TEXT_STACKING_STAY_TIME = 0.8
+float INCOMING_DAMAGE_TEXT_STACKING_FADE_TIME = 0.5
+float INCOMING_DAMAGE_TEXT_STACKING_DURATION = 1.3
+float INCOMING_DAMAGE_TEXT_STACKING_STAY_TIME = 0.8
 
-var stackingOutgoingDamageTextRui;
-float accumulatedOutgoingDamage = 0.0;
-float lastOutgoingDamageTextHitTime = 0.0;
+var stackingOutgoingDamageTextRui
+float accumulatedOutgoingDamage = 0.0
+float lastOutgoingDamageTextHitTime = 0.0
 
-var stackingIncomingDamageTextRui;
-float accumulatedIncomingDamage = 0.0;
-float lastIncomingDamageTextHitTime = 0.0;
+var stackingIncomingDamageTextRui
+float accumulatedIncomingDamage = 0.0
+float lastIncomingDamageTextHitTime = 0.0
+bool isMenuOpen = false
 
 void function Cl_DamageIndicator_Init()
 {
@@ -33,8 +34,8 @@ void function Cl_DamageIndicator_Init()
 
 void function PlayerTookDamage( float damage, vector pos, int damageType, int damageSourceId, entity attacker )
 {
-	if (!GetLocalViewPlayer().IsTitan()) return
-	if (Time() - lastIncomingDamageTextHitTime > INCOMING_DAMAGE_TEXT_STACKING_STAY_TIME)
+	if (!GetLocalViewPlayer().IsTitan() || !GetConVarBool("comp_hud_incoming_damage_indicator")) return
+	if (Time() - lastIncomingDamageTextHitTime > GetConVarFloat("comp_hud_incoming_damage_indicator_duration"))
 		accumulatedIncomingDamage = damage
 	else accumulatedIncomingDamage += damage
 	lastIncomingDamageTextHitTime = Time() // :D
@@ -76,6 +77,8 @@ void function AddSmallDamageTextFlyout(float damage, bool isCrit)
 	RuiSetFloat( rui, "thicken", 0.0 )
 
 	float startTime = Time()
+	float OUTGOING_DAMAGE_TEXT_SMALL_FADE_TIME = 0.5
+	
 	while ( Time() - startTime < OUTGOING_DAMAGE_TEXT_SMALL_FADE_TIME )
 	{
 		float alpha = Graph( Time() - startTime, 0, OUTGOING_DAMAGE_TEXT_SMALL_FADE_TIME, 0.5, 0 )
@@ -116,11 +119,31 @@ void function Thread_StackingDamageFlyoutText()
 	{
 		if (IsValid(GetLocalViewPlayer()))
 		{
+			INCOMING_DAMAGE_TEXT_STACKING_FADE_TIME = GetConVarFloat("comp_hud_incoming_damage_indicator_fade_time")
+			INCOMING_DAMAGE_TEXT_STACKING_DURATION = GetConVarFloat("comp_hud_incoming_damage_indicator_duration")
+			INCOMING_DAMAGE_TEXT_STACKING_STAY_TIME = INCOMING_DAMAGE_TEXT_STACKING_DURATION - INCOMING_DAMAGE_TEXT_STACKING_FADE_TIME
+
+			OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME = GetConVarFloat("comp_hud_damage_indicator_fade_time")
+			OUTGOING_DAMAGE_TEXT_STACKING_DURATION = GetConVarFloat("comp_hud_damage_indicator_duration")
+			OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME = OUTGOING_DAMAGE_TEXT_STACKING_DURATION - OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME
+
+			if (OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME < 0)
+			{
+				OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME = 0
+				SetConVarFloat("comp_hud_damage_indicator_duration", OUTGOING_DAMAGE_TEXT_STACKING_DURATION)
+			}
+
 			// outgoing damage text update
 			float timeSinceLastHit = Time() - lastOutgoingDamageTextHitTime
 			float alpha = GraphCapped( timeSinceLastHit - OUTGOING_DAMAGE_TEXT_STACKING_STAY_TIME, 0, OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME, 0.9, 0)
 			RuiSetFloat( stackingOutgoingDamageTextRui, "msgAlpha", alpha )
 
+			if (clGlobal.isMenuOpen && !isMenuOpen)
+			{
+				isMenuOpen = true
+				thread MenuOpen()
+			}
+			else if (!clGlobal.isMenuOpen) isMenuOpen = false
 			// incoming damage text update
 			
 			timeSinceLastHit = Time() - lastIncomingDamageTextHitTime
@@ -146,9 +169,35 @@ void function Thread_StackingDamageFlyoutText()
 	}
 }
 
+void function MenuOpen()
+{
+	bool isCrit = false
+	while (clGlobal.isMenuOpen)
+	{
+		accumulatedIncomingDamage = (accumulatedIncomingDamage + 50) % 250
+		accumulatedOutgoingDamage = (accumulatedOutgoingDamage + 50) % 250
+		if (IsValid(GetLocalClientPlayer()))
+		{
+			entity player = GetLocalViewPlayer()
+			lastIncomingDamageTextHitTime = Time()
+			lastOutgoingDamageTextHitTime = Time()
+			isCrit = !isCrit
+			RuiSetFloat3( stackingOutgoingDamageTextRui, "msgColor", isCrit ? <0.9, 0.55, 0.3> : <0.9, 0.9, 0.9> )
+			float msgFontSize = GraphCapped( accumulatedOutgoingDamage, 50, 200, 36, 48 )
+			RuiSetFloat( stackingOutgoingDamageTextRui, "msgFontSize", msgFontSize)
+			RuiSetFloat2( stackingOutgoingDamageTextRui, "msgPos", OUTGOING_DAMAGE_TEXT_BEGIN_POS - <0, GraphCapped(msgFontSize, 36, 72, 0.0, 0.05), 0> )
+			RuiSetString( stackingOutgoingDamageTextRui, "msgText", accumulatedOutgoingDamage.tointeger().tostring() )
+			RuiSetString( stackingIncomingDamageTextRui, "msgText", format( "-%i", int( accumulatedIncomingDamage ) ) )
+		}
+		wait max(GetConVarFloat("comp_hud_damage_indicator_duration"), GetConVarFloat("comp_hud_incoming_damage_indicator_duration"))
+	}
+	isMenuOpen = false
+}
+
 void function PlayerDidDamageText( float damage, vector damagePosition, entity victim, bool isCrit, bool isIneffective )
 {
-	if (Time() - lastOutgoingDamageTextHitTime > 1.3)
+	if (!GetConVarBool("comp_hud_damage_indicator")) return
+	if (Time() - lastOutgoingDamageTextHitTime > GetConVarFloat("comp_hud_damage_indicator_duration"))
 	{
 		ResetStackingDamageFlyoutText( damage, isCrit, victim )
 	}

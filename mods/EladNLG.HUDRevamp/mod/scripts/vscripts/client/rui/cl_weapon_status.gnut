@@ -203,9 +203,9 @@ void function UpdateHealthDisplays( float deltaTime )
 		int shieldHealth = 0;
 		if (player.GetTitanSoul() != null) shieldHealth = player.GetTitanSoul().GetShieldHealth()
 		RuiSetFloat3( file.ruis["health"], "msgColor", GetAccentColor() )
-		RuiSetFloat( file.ruis["health"], "msgAlpha", player.IsTitan() ? 0.9 : 0.0 )
+		RuiSetFloat( file.ruis["health"], "msgAlpha", (player.IsTitan() && GetConVarBool("comp_hud_healthbar")) ? 0.9 : 0.0 )
 		RuiSetFloat2( file.ruis["health"], "msgPos", settings.healthPos + (GetConVarBool("comp_hud_healthbar_overlap") ? <0.0, -0.0225, 0.0> : <0,0,0>))
-		if (shieldHealth > 0)
+		if (shieldHealth > 0 && GetConVarBool("comp_hud_healthbar"))
 		{
 			if (lastShieldHealth <= 0)
 			{
@@ -731,7 +731,7 @@ void function UpdateOffhandRuis( float deltaTime )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 0.0 )
 	}
 	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetAccentColor(true) )
-	if (GetConVarBool("comp_hud_wpd"))
+	if (GetConVarBool("comp_hud_wpd") && !player.IsTitan())
 	{
 		RuiSetString(file.ruis["offhand4"], "msgText", format( "%.1f km/h",  Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ) ) )
 		RuiSetFloat(file.ruis["offhand4"], "msgFontSize", GetConVarFloat("comp_hud_wpd_size"))

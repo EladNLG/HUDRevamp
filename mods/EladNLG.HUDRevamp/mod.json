@@ -25,6 +25,11 @@
     ],
     "ConVars": [
         {
+            "Name": "comp_hud_healthbar",
+            "DefaultValue": "1",
+            "Flags": 16777216
+        },
+        {
             "Name": "comp_hud_healthbar_overlap",
             "DefaultValue": "0",
             "Flags": 16777216 // FCVAR_ARCHIVE_PLAYERPROFILE
@@ -158,6 +163,36 @@
         {
             "Name": "comp_hud_wpd_size",
             "DefaultValue": "48",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_damage_indicator",
+            "DefaultValue": "1",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_damage_indicator_duration",
+            "DefaultValue": "1.3",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_damage_indicator_fade_time",
+            "DefaultValue": "0.5",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_incoming_damage_indicator",
+            "DefaultValue": "1",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_incoming_damage_indicator_duration",
+            "DefaultValue": "1.3",
+            "Flags": 16777216
+        },
+        {
+            "Name": "comp_hud_incoming_damage_indicator_fade_time",
+            "DefaultValue": "0.5",
             "Flags": 16777216
         }
     ]
