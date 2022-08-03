@@ -1,7 +1,7 @@
 {
     "Name": "HUD Revamp",
     "LoadPriority": 6,
-    "Version": "1.0.0",
+    "Version": "1.2.2",
     "Description": "pAIN\ntest",
     "Scripts": [
         {
