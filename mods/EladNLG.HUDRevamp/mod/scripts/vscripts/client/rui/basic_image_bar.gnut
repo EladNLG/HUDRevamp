@@ -42,7 +42,7 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
 {
     float scale = GetConVarFloat("comp_hud_ability_ui_scale")
     table<string, BarTopoData> result
-    float xScalar = 0.05
+    float xScalar = 0.1
     float yScalar = 0.1
     result["bg"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale )
 
@@ -51,7 +51,7 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
     
     if (GetConVarBool("comp_hud_vertical_side_bar"))
     {
-        result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.021 * scale, 0.0, 0>, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) / 1.7665 * scale, 0.09 * scale, eDirection.up )
+        result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.021 * scale, 0.0, 0>, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale / 1.7665, 0.09 * scale, eDirection.up )
         BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
     }
     else 
@@ -60,11 +60,11 @@ table<string, BarTopoData> function BasicImageBar_CreateOffhandUI(vector positio
         BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
     }
 
-    result["icon"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
+    result["bg"].imageRuis.append(RuiCreate($"ui/basic_image.rpak", result["bg"].topoData[0].topo, RUI_DRAW_COCKPIT, -1))
 
-    RuiSetImage( result["icon"].imageRuis[0], "basicImage", $"rui/pilot_loadout/ordnance/frag")
-    RuiSetFloat( result["icon"].imageRuis[0], "basicImageAlpha", 3) 
-    RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
+    RuiSetImage( result["bg"].imageRuis[1], "basicImage", $"rui/pilot_loadout/ordnance/frag")
+    RuiSetFloat( result["bg"].imageRuis[1], "basicImageAlpha", 3) 
+    RuiSetFloat3( result["bg"].imageRuis[1], "basicImageColor", <1,1,1>)
     
     result["bgBar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale, eDirection.up )
 
@@ -633,8 +633,8 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
     if ( !IsNewThread() )
         throw "Called UpdateOffhandUI without a thread :("
 
-    float xScalar = 0.05
-    float yScalar = 0.1
+    float xScalar = 0.06
+    float yScalar = 0.06
     
     while (true)
     {
@@ -648,13 +648,13 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
         }
         float scale = GetConVarFloat("comp_hud_ability_ui_scale")
 
-        data["bg"] = BasicImageBar_UpdatePosition( data["bg"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * scale )
+        data["bg"] = BasicImageBar_UpdatePosition( data["bg"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * 1.7665 * scale )
 
         // gets updated every frame, don't update the topology.
         if (pos != 4)
-            data["bgBar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bgBar"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * scale )
+            data["bgBar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bgBar"], GetConVarFloat2(posConVar), xScalar * scale, yScalar * 1.7665  * scale )
 
-        data["icon"] = BasicImageBar_UpdatePosition( data["icon"], GetConVarFloat2(posConVar), xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
+        //data["icon"] = BasicImageBar_UpdatePosition( data["icon"], GetConVarFloat2(posConVar), xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
 
         if (GetConVarBool("comp_hud_vertical_side_bar"))
         {
@@ -666,7 +666,7 @@ void function BasicImageBar_UpdateOffhandUI( table<string, BarTopoData> data, st
         {
             data["bar"].direction = eDirection.right
             //BasicImageBar_UpdateSegmentCount(data["bar"], data["bar"].segments, data["bar"].segmentDistance)
-            data["bar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bar"], GetConVarFloat2(posConVar) + <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale )
+            data["bar"] = BasicImageBar_UpdatePosition_NoUpdateTopo( data["bar"], GetConVarFloat2(posConVar) + <0.0, 0.045 * scale, 0>, 0.0525 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale )
             //BasicImageBar_UpdateSegmentCount( result["bar"], 2, xScalar )
         }
         

@@ -2,6 +2,7 @@ global function HudRevampSettings_Init
 
 void function HudRevampSettings_Init()
 {
+	#if PLAYER_HAS_MOD_SETTINGS
     printt("Adding settings :D")
 	AddConVarSetting("comp_hud_accent_color", "Accent Color", "HUD Revamp - General", "float3")
 	AddConVarSettingEnum("comp_hud_healthbar", "Titan Numerical Healthbar", 
@@ -12,12 +13,14 @@ void function HudRevampSettings_Init()
 
 	AddConVarSetting("comp_hud_ammo_pos", "Ammo Position", "HUD Revamp - General", "float2")
 	AddConVarSetting("comp_hud_holstered_weapons_pos", "Holstered Weapons Position", "HUD Revamp - General", "float2")
+	AddConVarSetting("comp_hud_ammo_scale", "Ammo Scale", "HUD Revamp - General", "float")
+	AddConVarSettingEnum( "comp_hud_ammo_label", "Ammo Label", "HUD Revamp - General", ["No", "Yes"] )
 
 	AddConVarSetting("comp_hud_ability_bg_alpha", "Background Alpha", 
 		"HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_ui_scale", "UI Scale", "HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_bar_thickness", "Progress Bar Thickness", "HUD Revamp - Abilities", "float")
-	AddConVarSetting("comp_hud_ability_icon_scale", "Icon Scale", "HUD Revamp - Abilities", "float")
+	//AddConVarSetting("comp_hud_ability_icon_scale", "Icon Scale", "HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_bar_empty_color", "Bar Color (Empty)", 
 		"HUD Revamp - Abilities", "float3")
 	AddConVarSetting("comp_hud_ability_bg_bar_empty_color", "Background Bar Color (Empty)", 
@@ -51,6 +54,37 @@ void function HudRevampSettings_Init()
 	AddConVarSettingEnum( "comp_hud_incoming_damage_indicator", "Enabled", "HUD Revamp - Incoming Damage Indicator", [ "No", "Yes" ] )
 	AddConVarSetting( "comp_hud_incoming_damage_indicator_duration", "Duration", "HUD Revamp - Incoming Damage Indicator", "float" )
 	AddConVarSetting( "comp_hud_incoming_damage_indicator_fade_time", "Fade Time", "HUD Revamp - Incoming Damage Indicator", "float" )
-
+	#else
+	if (NSGetModNames().find("Mod Settings") != -1)
+	{
+		NSSetModEnabled("Mod Settings", true)
+		ClientCommand("reload_mods; uiscript_reset")
+		return
+	}
+	thread OpenMissingDepPopup_Thread()
+	#endif
 	//AddConVarSetting("")
+}
+
+void function OpenMissingDepPopup_Thread()
+{
+	WaitFrame()
+	OpenMissingDepPopup()
+}
+
+void function OpenMissingDepPopup()
+{
+	DialogData dialogData
+	dialogData.header = "MISSING REQUIRED DEPENDENCY"
+	dialogData.message = "HUDRevamp requires ModSettings to function. The mod was not found. Please download it."
+	dialogData.image = $"ui/menu/common/dialog_error"
+	AddDialogButton( dialogData, "Retry", void function() { 
+		ClientCommand("uiscript_reset")
+	} )
+	AddDialogButton( dialogData, "Download", void function() { 
+		LaunchExternalWebBrowser( "https://northstar.thunderstore.io/package/EladNLG/ModSettings/", WEBBROWSER_FLAG_FORCEEXTERNAL )
+		OpenMissingDepPopup()
+	} )
+
+	OpenDialog(dialogData)
 }

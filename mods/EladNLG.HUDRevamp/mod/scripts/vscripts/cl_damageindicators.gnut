@@ -1,5 +1,7 @@
+untyped
 global function Cl_DamageIndicator_Init
 global function PlayerDidDamageText
+global function CalculateDivisorForEntity
 // ()
 const vector OUTGOING_DAMAGE_TEXT_BEGIN_POS = <0.525, 0.4, 0>
 float OUTGOING_DAMAGE_TEXT_STACKING_FADE_TIME = 0.5
@@ -12,7 +14,10 @@ float INCOMING_DAMAGE_TEXT_STACKING_DURATION = 1.3
 float INCOMING_DAMAGE_TEXT_STACKING_STAY_TIME = 0.8
 
 var stackingOutgoingDamageTextRui
+var lastOutgoingDamageTextRui
+float lastOutgoingDamageTextDamage = 0.0
 float accumulatedOutgoingDamage = 0.0
+int accumulatedOutgoingHits = 0
 float lastOutgoingDamageTextHitTime = 0.0
 
 var stackingIncomingDamageTextRui
@@ -46,6 +51,7 @@ void function ResetStackingDamageFlyoutText(float damage, bool isCrit, entity vi
 {
 	accumulatedOutgoingDamage = damage
 	if (stackingOutgoingDamageTextRui == null) return
+	accumulatedOutgoingHits = 1
 	RuiSetString( stackingOutgoingDamageTextRui, "msgText", accumulatedOutgoingDamage.tointeger().tostring() )
 	float msgFontSize = GraphCapped( accumulatedOutgoingDamage, victim.IsTitan() ? 500 : 50, victim.IsTitan() ? 10000 : 200, 36, victim.IsTitan() ? 56 : 48 )
 	RuiSetFloat( stackingOutgoingDamageTextRui, "msgFontSize", msgFontSize)
@@ -56,8 +62,9 @@ void function ResetStackingDamageFlyoutText(float damage, bool isCrit, entity vi
 void function AddDamageToStackingDamageFlyoutText(float damage, bool isCrit, entity victim)
 {
 	accumulatedOutgoingDamage += damage
+	accumulatedOutgoingHits++
 	if (stackingOutgoingDamageTextRui == null) return
-	RuiSetString( stackingOutgoingDamageTextRui, "msgText", accumulatedOutgoingDamage.tointeger().tostring() )
+	RuiSetString( stackingOutgoingDamageTextRui, "msgText", accumulatedOutgoingDamage.tointeger().tostring() + (accumulatedOutgoingHits > 1 ? "(x" + accumulatedOutgoingHits + ")" : ""))
 	float msgFontSize = GraphCapped( accumulatedOutgoingDamage, victim.IsTitan() ? 500 : 50, victim.IsTitan() ? 10000 : 200, 36, victim.IsTitan() ? 56 : 48 )
 	RuiSetFloat( stackingOutgoingDamageTextRui, "msgFontSize", msgFontSize)
 	RuiSetFloat2( stackingOutgoingDamageTextRui, "msgPos", OUTGOING_DAMAGE_TEXT_BEGIN_POS - <0, GraphCapped(msgFontSize, 36, 72, 0.0, 0.05), 0> )
@@ -67,6 +74,9 @@ void function AddDamageToStackingDamageFlyoutText(float damage, bool isCrit, ent
 void function AddSmallDamageTextFlyout(float damage, bool isCrit)
 {
 	var rui = RuiCreate( $"ui/cockpit_console_text_top_left.rpak", clGlobal.topoCockpitHudPermanent, RUI_DRAW_COCKPIT, 0)
+	accumulatedOutgoingHits = 0
+	lastOutgoingDamageTextRui = rui
+	lastOutgoingDamageTextDamage = damage
 	RuiSetInt( rui, "maxLines", 1 );
 	RuiSetInt( rui, "lineNum", 1 );
 	RuiSetFloat2( rui, "msgPos", OUTGOING_DAMAGE_TEXT_BEGIN_POS )
@@ -197,15 +207,74 @@ void function MenuOpen()
 void function PlayerDidDamageText( float damage, vector damagePosition, entity victim, bool isCrit, bool isIneffective )
 {
 	if (!GetConVarBool("comp_hud_damage_indicator")) return
+
+	float damageScale = 1.0
+	damageScale *= CalculateDivisorForEntity(victim)
+
+	if (damage > float(victim.GetHealth() + victim.GetShieldHealth()) * damageScale) damage = float(victim.GetHealth() + victim.GetShieldHealth()) * damageScale
+	
+	if (Time() - lastOutgoingDamageTextHitTime <= 0.05 && lastOutgoingDamageTextRui != null)
+	{
+		lastOutgoingDamageTextDamage += damage * damageScale
+		try
+		{
+			RuiSetString( lastOutgoingDamageTextRui, "msgText",  lastOutgoingDamageTextDamage.tointeger().tostring() )
+		}
+		catch (ex)
+		{
+			
+		}
+	}
+	else {
+		thread AddSmallDamageTextFlyout( damage * damageScale, isCrit )
+	}
+	
 	if (Time() - lastOutgoingDamageTextHitTime > GetConVarFloat("comp_hud_damage_indicator_duration"))
 	{
-		ResetStackingDamageFlyoutText( damage, isCrit, victim )
+		ResetStackingDamageFlyoutText( damage * damageScale, isCrit, victim )
 	}
 	else 
 	{
-		AddDamageToStackingDamageFlyoutText( damage, isCrit, victim )
+		AddDamageToStackingDamageFlyoutText( damage * damageScale, isCrit, victim )
 	}
-	thread AddSmallDamageTextFlyout( damage, isCrit )
 
 	lastOutgoingDamageTextHitTime = Time()
 }
+
+float function CalculateDivisorForEntity( entity npc )
+{
+	#if !PLAYER_HAS_ROGUELIKE_MOD
+		return 1.0
+	#else
+		if (npc.IsNPC())
+		{
+			try
+			{
+				if (typeof( npc.Dev_GetAISettingByKeyField( "Health" ) ) == "string") return 1.0
+			}
+			catch (ex)
+			{
+				return 1.0
+			}
+		} 
+		else if (!npc.IsPlayer()) return 1.0
+
+		int baseHealth = expect int (npc.IsNPC() ? npc.Dev_GetAISettingByKeyField( "Health" ) : int(npc.GetPlayerModHealth()))
+
+		//printt("BASE HEALTH:", baseHealth)
+		//printt("NEW BASE HEALTH:", baseHealth)
+		//printt("HEALTH PER LEVEL:", int(0.3 * baseHealth))
+		//printt("ROGUELIKE_DIFFICULTY:", roguelikeDifficulty)
+		//printt("HEALTH FROM LEVELS:", int(0.3 * baseHealth) * roguelikeDifficulty)
+		int level = npc.GetTeam() == TEAM_IMC ? roguelikeDifficulty : roguelikeLevel
+		int newBaseHealth = baseHealth + int(0.3 * baseHealth) * level
+		//printt("NEW HEALTH:", newBaseHealth)
+		baseHealth = int(max(min( newBaseHealth, 524287 ),10))
+
+		if (newBaseHealth > baseHealth)
+		{
+			return float(newBaseHealth) / baseHealth
+		}
+		return 1.0
+	#endif
+}	

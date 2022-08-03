@@ -32,9 +32,9 @@ global struct BarTopoData {
 	bool isFlat = false
 }
 
-global enum eDirection 
+global enum eDirection
 {
-    down, 
+    down,
     up,
     left,
     right
@@ -87,7 +87,7 @@ void function AddUpdateCallback( void functionref( float ) callback )
 
 void function ClWeaponStatus_RefreshWeaponStatus( entity player )
 {
-	
+
 }
 
 var function ClWeaponStatus_GetWeaponHudRui( entity player, entity weapon )
@@ -101,11 +101,10 @@ void function ClWeaponStatus_AddClient( entity player )
 	AddStartCallback( InitHolsteredWeapons )
 	AddStartCallback( InitOffhandRuis )
 	AddStartCallback( InitHealthRuis )
+	AddUpdateCallback( Test_Update )
 	Start()
 	thread UpdateThread()
 }
-
-
 
 // BASIC THREADS
 
@@ -161,15 +160,15 @@ void function InitHealthRuis()
 		RuiSetFloat( rui, "thicken", 0.0 )
 		file.ruis["shield"] <- rui
 	}
-	
+
 	{
 		var rui = RuiCreate( RUI_TEXT_LEFT, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 5 )
 		RuiSetInt( rui, "maxLines", 1 )
-		RuiSetInt( rui, "lineNum", 1 )
+		RuiSetInt( rui, "lineNum", 0 )
 		RuiSetFloat2( rui, "msgPos", <0.65, 0.74, 0> )
 		RuiSetFloat3( rui, "msgColor", GetAccentColor() )
 		RuiSetString( rui, "msgText", "2500" )
-		RuiSetFloat( rui, "msgFontSize", 72.0 )
+		RuiSetFloat( rui, "msgFontSize", 60.0 )
 		RuiSetFloat( rui, "msgAlpha", 0.9 )
 		RuiSetFloat( rui, "thicken", 0.0 )
 		file.ruis["healthText"] <- rui
@@ -201,7 +200,7 @@ void function UpdateHealthDisplays( float deltaTime )
 	else
 	{
 		int shieldHealth = 0;
-		if (player.GetTitanSoul() != null) shieldHealth = player.GetTitanSoul().GetShieldHealth()
+		if (player.GetTitanSoul() != null) shieldHealth = int( player.GetTitanSoul().GetShieldHealth() * CalculateDivisorForEntity(player) )
 		RuiSetFloat3( file.ruis["health"], "msgColor", GetAccentColor() )
 		RuiSetFloat( file.ruis["health"], "msgAlpha", (player.IsTitan() && GetConVarBool("comp_hud_healthbar")) ? 0.9 : 0.0 )
 		RuiSetFloat2( file.ruis["health"], "msgPos", settings.healthPos + (GetConVarBool("comp_hud_healthbar_overlap") ? <0.0, -0.0225, 0.0> : <0,0,0>))
@@ -215,7 +214,7 @@ void function UpdateHealthDisplays( float deltaTime )
 
 			RuiSetFloat( file.ruis["shield"], "msgAlpha", 0.9 )
 		}
-		else 
+		else
 		{
 			if (lastShieldHealth > 0)
 			{
@@ -228,7 +227,7 @@ void function UpdateHealthDisplays( float deltaTime )
 		RuiSetString(file.ruis["shield"], "msgText", shieldHealth.tostring())
 	}
 
-	RuiSetString(file.ruis["health"], "msgText", player.GetHealth().tostring())
+	RuiSetString(file.ruis["health"], "msgText", int(player.GetHealth() * CalculateDivisorForEntity(player)).tostring())
 
 	////////////////
 	// BAR UPDATE //
@@ -248,9 +247,9 @@ void function UpdateHealthDisplays( float deltaTime )
 		BasicImageBar_UpdatePosition( file.bars["healthBG"], GetConVarFloat2( "comp_hud_pilot_healthbar_pos"),
 			(xSize + 0.005), (ySize + 0.005) * vertMultiplier )
 		//BasicImageBar_UpdateSegmentCount( data, 5, 0.1 )
-		BasicImageBar_UpdatePosition( file.bars["health"], GetConVarFloat2( "comp_hud_pilot_healthbar_pos"), 
+		BasicImageBar_UpdatePosition( file.bars["health"], GetConVarFloat2( "comp_hud_pilot_healthbar_pos"),
 			xSize, ySize * vertMultiplier )
-		RuiSetFloat2( file.ruis["healthText"], "msgPos", <0.5, 0.37, 0> + GetConVarFloat2("comp_hud_pilot_healthbar_pos") + <xSize * -0.5, -ySize, 0> )
+		RuiSetFloat2( file.ruis["healthText"], "msgPos", <0.5, 0.44, 0> + GetConVarFloat2("comp_hud_pilot_healthbar_pos") + <xSize * -0.5, -ySize, 0> )
 		//BasicImageBar_UpdateSegmentCount( data, , 0.1 )
 
 		BasicImageBar_SetFillFrac( file.bars["health"], float(player.GetHealth()) / float(player.GetMaxHealth()) )
@@ -281,7 +280,7 @@ void function InitAmmoCounterRui()
 {
 	var rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
-	RuiSetInt( rui, "lineNum", 1 )
+	RuiSetInt( rui, "lineNum", 0 )
 	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") )
 	RuiSetString( rui, "msgText", "56" )
 	RuiSetFloat( rui, "msgFontSize", 96.0 )
@@ -293,7 +292,7 @@ void function InitAmmoCounterRui()
 	// "AMMO" below the counter
 	rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
-	RuiSetInt( rui, "lineNum", 1 )
+	RuiSetInt( rui, "lineNum", 0 )
 	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.0, 0.1, 0.0> )
 	RuiSetString( rui, "msgText", "AMMO" )
 	RuiSetFloat( rui, "msgFontSize", 48.0 )
@@ -301,11 +300,11 @@ void function InitAmmoCounterRui()
 	RuiSetFloat( rui, "thicken", 0.0 )
 
 	file.ruis["ammoDisplay"] <- rui
-	
+
 	rui = RuiCreate( RUI_TEXT_CENTER, clGlobal.topoCockpitHud, RUI_DRAW_COCKPIT, 0 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 0 )
-	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.025, 0.1, 0.0> )
+	RuiSetFloat2( rui, "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.025, 0.025, 0.0> )
 	RuiSetString( rui, "msgText", "240" )
 	RuiSetFloat( rui, "msgFontSize", 48.0 )
 	RuiSetFloat( rui, "msgAlpha", 0.9 )
@@ -319,7 +318,7 @@ void function UpdateAmmoCounter( float deltaTime )
 	entity player = GetLocalViewPlayer()
 
 	if (!IsValid(player) || !player.IsPlayer() || !IsAlive( player )) return
-	
+
 	entity weapon = file.selectedWeapon
 
 	if (!IsValid(weapon)) return
@@ -330,19 +329,24 @@ void function UpdateAmmoCounter( float deltaTime )
 	}
 
 	RuiSetString(file.ruis["ammo"], "msgText", GetAmmoString(weapon))
-	
+
 	// REAL-TIME SETTING - COLOR
-	RuiSetFloat3(file.ruis["ammo"], "msgColor", 
+	RuiSetFloat3(file.ruis["ammo"], "msgColor",
 		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
-	RuiSetFloat3(file.ruis["ammoDisplay"], "msgColor", 
+	RuiSetFloat3(file.ruis["ammoDisplay"], "msgColor",
 		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
-	RuiSetFloat3(file.ruis["stockpile"], "msgColor", 
+	RuiSetFloat3(file.ruis["stockpile"], "msgColor",
 		GetAccentColor(weapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
-	
+
 	// REAL-TIME SETTING - POSITION
+	float scale = GetConVarFloat( "comp_hud_ammo_scale" )
 	RuiSetFloat2( file.ruis["ammo"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") )
-	RuiSetFloat2( file.ruis["ammoDisplay"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.0, 0.1, 0.0> )
-	RuiSetFloat2( file.ruis["stockpile"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.025, 0.1, 0.0> )
+	RuiSetFloat2( file.ruis["ammoDisplay"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.0, 0.06, 0.0> * scale )
+	RuiSetFloat2( file.ruis["stockpile"], "msgPos", GetConVarFloat2("comp_hud_ammo_pos") + <0.025, 0.015, 0.0> * scale )
+
+	RuiSetFloat( file.ruis["ammo"], "msgFontSize", 96.0 * scale )
+	RuiSetFloat( file.ruis["ammoDisplay"], "msgFontSize", 48.0 * scale )
+	RuiSetFloat( file.ruis["stockpile"], "msgFontSize", 48.0 * scale )
 }
 
 // HOLSTERED WEAPONS
@@ -404,14 +408,14 @@ void function UpdateHolsteredWeapons( float deltaTime )
 				// display secondary
 				case 0:
 					entity displayWeapon = player.GetMainWeapons()[1]
-					RuiSetFloat3(rui, "msgColor", 
+					RuiSetFloat3(rui, "msgColor",
 						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary1% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 				// display primary
 				default:
-					entity displayWeapon = player.GetMainWeapons()[0] 
-					RuiSetFloat3(rui, "msgColor", 
+					entity displayWeapon = player.GetMainWeapons()[0]
+					RuiSetFloat3(rui, "msgColor",
 						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary0% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
@@ -431,15 +435,15 @@ void function UpdateHolsteredWeapons( float deltaTime )
 			{
 				// display secondary
 				case 2:
-					entity displayWeapon = player.GetMainWeapons()[1] 
-					RuiSetFloat3(rui, "msgColor", 
+					entity displayWeapon = player.GetMainWeapons()[1]
+					RuiSetFloat3(rui, "msgColor",
 						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary1% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
 				// display anti-titan
 				default:
-					entity displayWeapon = player.GetMainWeapons()[2] 
-					RuiSetFloat3(rui, "msgColor", 
+					entity displayWeapon = player.GetMainWeapons()[2]
+					RuiSetFloat3(rui, "msgColor",
 						GetAccentColor(displayWeapon.GetWeaponSettingBool( eWeaponVar.is_burn_mod )))
 					RuiSetString(rui, "msgText", (GetConVarBool("hud_setting_showButtonHints") ? "%weaponSelectPrimary2% " : "") + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "`2" : "") + displayWeapon.GetWeaponSettingString( eWeaponVar.shortprintname ) + (displayWeapon.GetReloadMilestoneIndex() != 0 ? "" : " - " + GetAmmoString(displayWeapon)))
 					break
@@ -472,6 +476,7 @@ void function OnSelectedWeaponChanged( entity selectedWeapon )
 string function GetAmmoString( entity weapon )
 {
 	string result
+	RuiSetFloat(file.ruis["ammoDisplay"], "msgAlpha", GetConVarFloat( "comp_hud_ammo_label" ) )
 	if (!weapon.GetWeaponSettingBool( eWeaponVar.ammo_no_remove_from_stockpile ))
 	{
 		if (weapon.GetWeaponSettingInt( eWeaponVar.ammo_clip_size ) <= 1)
@@ -500,7 +505,7 @@ string function GetAmmoString( entity weapon )
 	}
 	else
 	{
-			if (file.selectedWeapon == weapon) RuiSetFloat(file.ruis["stockpile"], "msgAlpha", 0.0)
+		if (file.selectedWeapon == weapon) RuiSetFloat(file.ruis["stockpile"], "msgAlpha", 0.0)
 		if (weapon.GetWeaponSettingFloat(eWeaponVar.regen_ammo_refill_rate) > 0.0)
 		{
 			float ammoFrac = float( weapon.GetWeaponPrimaryClipCount() ) / float( weapon.GetWeaponPrimaryClipCountMax() )
@@ -517,13 +522,13 @@ string function GetAmmoString( entity weapon )
 // could be useful, but we are already checking for weapon changed, so?
 void function OnPlayerClassChanged( entity player )
 {
-	
+
 }
 
 // destroy all ruis when dead after doing life checks
 void function OnLifeStateChanged( entity player, int oldLifeState, int newLifeState )
 {
-	
+
 }
 
 void function InitOffhandRuis()
@@ -606,29 +611,29 @@ void function InitOffhandRuis()
 		result["bg"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale )
 
 		RuiSetFloat3( result["bg"].imageRuis[0], "basicImageColor", < 0,0,0 >)
-		RuiSetFloat( result["bg"].imageRuis[0], "basicImageAlpha", GetConVarFloat("comp_hud_ability_bg_alpha")) 
-		
+		RuiSetFloat( result["bg"].imageRuis[0], "basicImageAlpha", GetConVarFloat("comp_hud_ability_bg_alpha"))
+
 		if (GetConVarBool("comp_hud_vertical_side_bar"))
 		{
 			result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.021 * scale, 0.0, 0>, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) / 1.7665 * scale, 0.09 * scale, eDirection.up )
 			BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
 		}
-		else 
+		else
 		{
 			result["bar"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position - <0.0, 0.0425 * scale, 0>, 0.045 * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale, eDirection.right )
 			BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
 		}
 
-		result["icon"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale * GetConVarFloat("comp_hud_ability_icon_scale"), xScalar * 1.7665 * scale * GetConVarFloat("comp_hud_ability_icon_scale") )
+		result["bg"].imageRuis.append(RuiCreate($"ui/basic_image.rpak", result["bg"].topoData[0].topo, RUI_DRAW_COCKPIT, -1))
 
-		RuiSetFloat( result["icon"].imageRuis[0], "basicImageAlpha", 2) 
-		RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
-		
+		RuiSetFloat( result["bg"].imageRuis[1], "basicImageAlpha", 2)
+		RuiSetFloat3( result["bg"].imageRuis[1], "basicImageColor", <1,1,1>)
+
 		foreach(var rui in result["bar"].imageRuis)
 		{
 			RuiSetFloat3(rui, "basicImageColor", GetAccentColor() )
 		}
-    
+
 		file.offhandUIPrefabs["offhand4"] <- result
 		thread BasicImageBar_UpdateOffhandUI( result, "comp_hud_boost_position", 4 )
 	}
@@ -711,9 +716,9 @@ void function UpdateOffhandRuis( float deltaTime )
 	if (segments != 0)
 	{
 		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], segments, 0.05 )
-		
-		RuiSetImage( file.offhandUIPrefabs["offhand4"]["icon"].imageRuis[0], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( boost.GetWeaponClassName(), boost.GetMods(), "hud_icon" ) )
-		
+
+		RuiSetImage( file.offhandUIPrefabs["offhand4"]["bg"].imageRuis[1], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( boost.GetWeaponClassName(), boost.GetMods(), "hud_icon" ) )
+
 		foreach ( var image in file.offhandUIPrefabs["offhand4"]["bar"].imageRuis )
 		{
 			RuiSetFloat3( image, "basicImageColor", GetAccentColor(true) )
@@ -721,18 +726,19 @@ void function UpdateOffhandRuis( float deltaTime )
 
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 1.0 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 1.0 )
-		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 1.0 )
 	}
 	else
 	{
 		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], 1, 0.05 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 0.0 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 0.0 )
-		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 0.0 )
 	}
 	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetAccentColor(true) )
 	if (GetConVarBool("comp_hud_wpd") && !player.IsTitan())
 	{
+		// 1 feet = 12 game units
+		// 243 game units / second = 20.25 feet / second
+		// 1 foot / second = 1.097 km / h
 		RuiSetString(file.ruis["offhand4"], "msgText", format( "%.1f km/h",  Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ) ) )
 		RuiSetFloat(file.ruis["offhand4"], "msgFontSize", GetConVarFloat("comp_hud_wpd_size"))
 		RuiSetFloat2(file.ruis["offhand4"], "msgPos", GetConVarFloat2("comp_hud_wpd_pos"))
@@ -744,18 +750,25 @@ void function UpdateOffhandRuis( float deltaTime )
 				isWR = true
 				startWRSpeed = lastSpeed
 			}
+			//player.ClientCommand("+jump")
 			WRFrames++
-			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" + 
+			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" +
 			format( "%.1f km/h", Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ) ) )
 		}
 		else {
+			//player.ClientCommand("-jump")
 			if (isWR) endWRSpeed = Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) )
 			isWR = false
-			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" + 
+			RuiSetString(file.ruis["offhand4"], "msgText", "frames: " + WRFrames + "\n" +
 			format( "%.1f km/h (%+.1f)", Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) / 10.9444 ), (endWRSpeed - startWRSpeed) / 10.9444 ) )
 
 			lastSpeed = Length( Vector( player.GetVelocity().x, player.GetVelocity().y, 0 ) )
 		}
+		//if (GetConVarBool("comp_hud_ability_bar_empty_color"))
+		//{
+		//	SetConVarBool("comp_hud_ability_bar_empty_color", false)
+		//	
+		//}
 		return
 	}
 
@@ -777,7 +790,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	float ammoFrac = 0
 	if (weapon.IsChargeWeapon()) ammoFrac = 1 - weapon.GetWeaponChargeFraction()
 	if (weapon.GetWeaponPrimaryClipCountMax() > 0) ammoFrac = float(weapon.GetWeaponPrimaryClipCount()) / weapon.GetWeaponPrimaryClipCountMax()
-	RuiSetImage( bar["icon"].imageRuis[0], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( weapon.GetWeaponClassName(), weapon.GetMods(), "hud_icon" ) )
+	RuiSetImage( bar["bg"].imageRuis[1], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( weapon.GetWeaponClassName(), weapon.GetMods(), "hud_icon" ) )
 	switch ( weapon.GetWeaponInfoFileKeyField( "cooldown_type" ) )
 	{
 		case "ammo_swordblock":
@@ -785,7 +798,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 			timeUntilNextCharge = 0
 			altCooldown = 0
 			break
-		
+
 		case "shared_energy":
 			int curCost = weapon.GetWeaponCurrentEnergyCost() // 350
 			float energy = float( player.GetSharedEnergyCount() )
@@ -797,7 +810,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 			int curCharges = int( energy ) / curCost
 			int targetAmmo = (curCharges + 1) * curCost
 			timeUntilNextCharge = (targetAmmo - energy) / energyRegenRate
-			ammoFrac = (energy / curCost)
+			ammoFrac = (energy / curCost / maxCharges)
 
 			// Ability - 2/2 | 2.5s
 			break
@@ -852,16 +865,22 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 				grappleRegenRate *= 1.35
 			}
 
-			maxCharges = 2
-			minFracToUse = 0.5
+			try
+			{
+				maxCharges = ammoClipSize / int(ammoMinToFire)
+			}
+			catch (ex) { maxCharges = 1 }
+			minFracToUse = ammoMinToFire / ammoClipSize
 			if (ammoMinToFire > 0) maxCharges = ammoClipSize / int( ammoMinToFire )
 			int curCharges = 0;
 			if (ammoMinToFire > 0) curCharges = int( grapplePower ) / int( ammoMinToFire )
 			int targetAmmo = (curCharges + 1) * int( ammoMinToFire )
 			timeUntilNextCharge = (targetAmmo - grapplePower) / grappleRegenRate
+			if (GameRules_GetGameMode() == "econ")
+				timeUntilNextCharge = 0.0
 			if (ammoClipSize == grapplePower) timeUntilNextCharge = 0
 			ammoFrac = grapplePower / ammoClipSize
-			
+
 			break
 
 		case "ammo_instant":
@@ -876,7 +895,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 					if (timeUntilNextCharge > altCooldown)
 						altCooldown = timeUntilNextCharge
 				}
-			} 
+			}
 		default:
 			float refillRate = weapon.GetWeaponSettingFloat( eWeaponVar.regen_ammo_refill_rate )
 
@@ -912,7 +931,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 				else timeUntilNextCharge = 0.0
 				if (ammoClipSize == weapon.GetWeaponPrimaryClipCount()) timeUntilNextCharge = 0
 
-				
+
 			}
 			else
 			{
@@ -932,7 +951,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 			}
 			break
 	}
-	
+
 	float cooldown = max(timeUntilNextCharge, altCooldown)
 	maxCharges = int( max(1, maxCharges) )
 	if (maxCharges > 5) maxCharges = 1
@@ -945,7 +964,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	foreach (var rui in bar["bgBar"].imageRuis)
 	{
 		RuiSetFloat3( rui, "basicImageColor", GetAccentColor() * 0.5)
-		RuiSetFloat( rui, "basicImageAlpha", 0.1) 
+		RuiSetFloat( rui, "basicImageAlpha", 0.1)
 	}
 	foreach(var rui in bar["bar"].imageRuis)
 	{
@@ -965,17 +984,17 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	RuiSetFloat(bar["bg"].imageRuis[0], "basicImageAlpha", GetConVarFloat("comp_hud_ability_bg_alpha"))
 
 	if (!doNotSetText) RuiSetString(rui, "msgText", format(settings.abilityText, cooldown))
-	
+
 
 
 	if (cooldown == 0.0) {
 		RuiSetString(rui, "msgText", "")
-		RuiSetFloat3(bar["icon"].imageRuis[0], "basicImageColor", <1.5, 1.5, 1.5>)
-		RuiSetFloat(bar["icon"].imageRuis[0], "basicImageAlpha", 3)
+		RuiSetFloat3(bar["bg"].imageRuis[1], "basicImageColor", <1.5, 1.5, 1.5>)
+		RuiSetFloat(bar["bg"].imageRuis[1], "basicImageAlpha", 3)
 	}
 	else {
-		RuiSetFloat3(bar["icon"].imageRuis[0], "basicImageColor", <1, 1, 1>)
-		RuiSetFloat(bar["icon"].imageRuis[0], "basicImageAlpha", 3)
+		RuiSetFloat3(bar["bg"].imageRuis[1], "basicImageColor", <1, 1, 1>)
+		RuiSetFloat(bar["bg"].imageRuis[1], "basicImageAlpha", 3)
 	}
 }
 
@@ -989,15 +1008,16 @@ void function ClWeaponStatus_SetOffhandVisible( int offhandIndex, bool newState 
 	// ALSO A STUB :D
 }
 
+void function ClWeaponStatus_SetWeaponVisible( bool newState )
+{
+
+}
+
 var function GetRuiForIndex( entity player, int offhandIndex )
 {
 	return null
 }
 
-void function ClWeaponStatus_SetWeaponVisible( bool newState )
-{
-	
-} 
 
 void function UpdateOffhandUIPrefab( int slot, table<string, BarTopoData> data )
 {
@@ -1011,13 +1031,11 @@ table<string, BarTopoData> function GetOffhandUI(int slot)
 
 void function TestRuiTopo()
 {
-	var testTopo = CreateWorldTopo( 
-		<0,100,0>, 
+	var testTopo = CreateWorldTopo(
+		<0,100,0>,
 		<0, 0, 0>, 160, 90
 	)
 
-	printt(GetLocalViewPlayer().GetViewModelEntity().GetAttachmentAngles(GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")))
-	printt(GetLocalViewPlayer().CameraPosition())
 	var rui = RuiCreate( RUI_TEXT_CENTER, testTopo, RUI_DRAW_COCKPIT, 5 )
 	RuiSetInt( rui, "maxLines", 1 )
 	RuiSetInt( rui, "lineNum", 0 )
@@ -1030,18 +1048,85 @@ void function TestRuiTopo()
 
 	// no idea if this'll work
 	//RuiTopology_SetParent( testTopo, GetLocalViewPlayer().GetViewModelEntity() )
-	thread Test_Update(testTopo)
+	thread Test_Update(0.0)
 }
 
-void function Test_Update(var topo)
+void function Test_Update(float deltaTime)
 {
-	while (true)
+	if (GetConVarInt("comp_hud_cfg") == 0) return
+
+	SetConVarInt("comp_hud_cfg", 0)
+
+
+	string result = "\n\n// Here's your layout - tell your friends to paste this in console!\n\n"
+
+	array<string> convars = [
+		"////////////",
+		"// COLORS //",
+		"////////////",
+		"",
+		"comp_hud_accent_color",
+		"comp_hud_boost_text_color",
+		"comp_hud_ability_bar_empty_color",
+		"comp_hud_ability_bg_alpha",
+		"",
+		"/////////////",
+		"// TOGGLES //",
+		"/////////////",
+		"// HEALTHBARS",
+		"comp_hud_healthbar",
+		"comp_hud_pilot_healthbar",
+		"// DAMAGE INDICATORS",
+		"comp_hud_damage_indicator",
+		"comp_hud_incoming_damage_indicator",
+		"// MISC.",
+		"comp_hud_vertical_side_bar",
+		"comp_hud_wpd",
+		"",
+		"////////////",
+		"// LAYOUT //",
+		"////////////",
+		"",
+		"// HEALTHBAR",
+		"comp_hud_pilot_healthbar_pos",
+		"comp_hud_pilot_healthbar_size",
+		"// ABILITY POSITIONS",
+		"comp_hud_ordnance_position",
+		"comp_hud_tactical_position",
+		"comp_hud_utility_position",
+		"comp_hud_boost_position",
+		"// ABILITY UI SCALING",
+		"comp_hud_ability_ui_scale",
+		"comp_hud_ability_cooldown_pos_offset",
+		"// AMMO",
+		"comp_hud_ammo_pos",
+		"comp_hud_holstered_weapons_pos",
+		"comp_hud_titan_meter_offset",
+		"comp_hud_titan_meter_scale",
+		"// DAMAGE INDICATORS",
+		"comp_hud_damage_indicator_duration",
+		"comp_hud_damage_indicator_fade_time",
+		"// INCOMING DAMAGE INDICATOR",
+		"comp_hud_incoming_damage_indicator_duration",
+		"comp_hud_incoming_damage_indicator_fade_time",
+		"// WALLKICK PRACTICE DISPLAY",
+		"comp_hud_wpd_pos",
+		"comp_hud_wpd_size",
+	]
+
+	foreach (string convar in convars)
 	{
-		print(GetLocalViewPlayer().CameraPosition() -GetLocalViewPlayer().GetViewModelEntity().GetAttachmentOrigin(
-				GetLocalViewPlayer().GetViewModelEntity().LookupAttachment("muzzle_flash")
-			))
-		RuiTopology_UpdatePos( topo, <0, 100, 0>, <0, -160, 0>, <0,0,-90>
-		)
-		wait 0.1
+		if (convar.len() > 0 && convar[0] == '/') result += "\n" + convar
+		else if (convar == "")
+		{
+			print(result)
+			result = "\n"
+		}
+		else
+		{
+			result += "\n" + convar + " " + GetConVarString(convar)
+		}
 	}
+
+	printt(result)
 }
