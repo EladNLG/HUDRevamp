@@ -20,7 +20,7 @@ void function HudRevampSettings_Init()
 		"HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_ui_scale", "UI Scale", "HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_bar_thickness", "Progress Bar Thickness", "HUD Revamp - Abilities", "float")
-	//AddConVarSetting("comp_hud_ability_icon_scale", "Icon Scale", "HUD Revamp - Abilities", "float")
+	AddConVarSetting("comp_hud_ability_icon_scale", "Icon Scale", "HUD Revamp - Abilities", "float")
 	AddConVarSetting("comp_hud_ability_bar_empty_color", "Bar Color (Empty)", 
 		"HUD Revamp - Abilities", "float3")
 	AddConVarSetting("comp_hud_ability_bg_bar_empty_color", "Background Bar Color (Empty)", 

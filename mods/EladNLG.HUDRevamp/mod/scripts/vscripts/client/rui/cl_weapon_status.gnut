@@ -602,12 +602,13 @@ void function InitOffhandRuis()
 		thread BasicImageBar_UpdateOffhandUI( prefab, "comp_hud_utility_position", 2 )
 	}
 	// boost prefab is different
+	#if MP
 	{
 		vector position = GetConVarFloat2("comp_hud_boost_position")
 		float scale = GetConVarFloat("comp_hud_ability_ui_scale")
 		table<string, BarTopoData> result
-		float xScalar = 0.05
-		float yScalar = 0.1
+		float xScalar = 0.06
+		float yScalar = 0.06
 		result["bg"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, yScalar * scale )
 
 		RuiSetFloat3( result["bg"].imageRuis[0], "basicImageColor", < 0,0,0 >)
@@ -624,10 +625,10 @@ void function InitOffhandRuis()
 			BasicImageBar_UpdateSegmentCount( result["bar"], 2, 0.05 )
 		}
 
-		result["bg"].imageRuis.append(RuiCreate($"ui/basic_image.rpak", result["bg"].topoData[0].topo, RUI_DRAW_COCKPIT, -1))
+		result["icon"] <- BasicImageBar_CreateRuiTopo( <0, 0, 0>, position, xScalar * scale, (xScalar * GetConVarFloat("comp_hud_ability_bar_thickness")) * scale, eDirection.right )
 
-		RuiSetFloat( result["bg"].imageRuis[1], "basicImageAlpha", 2)
-		RuiSetFloat3( result["bg"].imageRuis[1], "basicImageColor", <1,1,1>)
+		RuiSetFloat( result["icon"].imageRuis[0], "basicImageAlpha", 2)
+		RuiSetFloat3( result["icon"].imageRuis[0], "basicImageColor", <1,1,1>)
 
 		foreach(var rui in result["bar"].imageRuis)
 		{
@@ -637,6 +638,7 @@ void function InitOffhandRuis()
 		file.offhandUIPrefabs["offhand4"] <- result
 		thread BasicImageBar_UpdateOffhandUI( result, "comp_hud_boost_position", 4 )
 	}
+	#endif
 
 
 	AddUpdateCallback( UpdateOffhandRuis )
@@ -688,6 +690,7 @@ void function UpdateOffhandRuis( float deltaTime )
 			UpdateOffhandRui(rui, bar, player, player.GetOffhandWeapon(i))
 		}
 	}
+	#if MP
 	entity boost = player.GetOffhandWeapon(4)
 
 	int segments = 0
@@ -717,7 +720,7 @@ void function UpdateOffhandRuis( float deltaTime )
 	{
 		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], segments, 0.05 )
 
-		RuiSetImage( file.offhandUIPrefabs["offhand4"]["bg"].imageRuis[1], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( boost.GetWeaponClassName(), boost.GetMods(), "hud_icon" ) )
+		RuiSetImage( file.offhandUIPrefabs["offhand4"]["icon"].imageRuis[0], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( boost.GetWeaponClassName(), boost.GetMods(), "hud_icon" ) )
 
 		foreach ( var image in file.offhandUIPrefabs["offhand4"]["bar"].imageRuis )
 		{
@@ -733,6 +736,7 @@ void function UpdateOffhandRuis( float deltaTime )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 0.0 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 0.0 )
 	}
+	#endif
 	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetAccentColor(true) )
 	if (GetConVarBool("comp_hud_wpd") && !player.IsTitan())
 	{
@@ -790,7 +794,7 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 	float ammoFrac = 0
 	if (weapon.IsChargeWeapon()) ammoFrac = 1 - weapon.GetWeaponChargeFraction()
 	if (weapon.GetWeaponPrimaryClipCountMax() > 0) ammoFrac = float(weapon.GetWeaponPrimaryClipCount()) / weapon.GetWeaponPrimaryClipCountMax()
-	RuiSetImage( bar["bg"].imageRuis[1], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( weapon.GetWeaponClassName(), weapon.GetMods(), "hud_icon" ) )
+	RuiSetImage( bar["icon"].imageRuis[0], "basicImage", GetWeaponInfoFileKeyFieldAsset_WithMods_Global( weapon.GetWeaponClassName(), weapon.GetMods(), "hud_icon" ) )
 	switch ( weapon.GetWeaponInfoFileKeyField( "cooldown_type" ) )
 	{
 		case "ammo_swordblock":
@@ -989,12 +993,12 @@ void function UpdateOffhandRui( var rui, table<string, BarTopoData> bar, entity 
 
 	if (cooldown == 0.0) {
 		RuiSetString(rui, "msgText", "")
-		RuiSetFloat3(bar["bg"].imageRuis[1], "basicImageColor", <1.5, 1.5, 1.5>)
-		RuiSetFloat(bar["bg"].imageRuis[1], "basicImageAlpha", 3)
+		RuiSetFloat3(bar["icon"].imageRuis[0], "basicImageColor", <1.5, 1.5, 1.5>)
+		RuiSetFloat(bar["icon"].imageRuis[0], "basicImageAlpha", 3)
 	}
 	else {
-		RuiSetFloat3(bar["bg"].imageRuis[1], "basicImageColor", <1, 1, 1>)
-		RuiSetFloat(bar["bg"].imageRuis[1], "basicImageAlpha", 3)
+		RuiSetFloat3(bar["icon"].imageRuis[0], "basicImageColor", <1, 1, 1>)
+		RuiSetFloat(bar["icon"].imageRuis[0], "basicImageAlpha", 3)
 	}
 }
 

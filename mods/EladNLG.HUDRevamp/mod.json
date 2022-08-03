@@ -1,7 +1,7 @@
 {
     "Name": "HUD Revamp",
     "LoadPriority": 6,
-    "Version": "1.2.2",
+    "Version": "1.2.3",
     "Description": "pAIN\ntest",
     "Scripts": [
         {
@@ -58,11 +58,11 @@
             "DefaultValue": "0 0",
             "Flags": 16777216
         },
-        /*{
+        {
             "Name": "comp_hud_ability_icon_scale",
             "DefaultValue": "0.9",
             "Flags": 16777216
-        },*/
+        },
         {
             "Name": "comp_hud_ability_ui_scale",
             "DefaultValue": "0.75",
@@ -90,12 +90,12 @@
         },
         {
             "Name": "comp_hud_boost_position",
-            "DefaultValue": "-0.29 0.2",
+            "DefaultValue": "-0.2 0.35",
             "Flags": 16777216
         },
         {
             "Name": "comp_hud_boost_text_color",
-            "DefaultValue": "255 178 76",
+            "DefaultValue": "10 150 10",
             "Flags": 16777216
         },
         {
