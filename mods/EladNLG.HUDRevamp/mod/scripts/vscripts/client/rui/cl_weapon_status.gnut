@@ -729,12 +729,14 @@ void function UpdateOffhandRuis( float deltaTime )
 
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 1.0 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 1.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 1.0 )
 	}
 	else
 	{
 		BasicImageBar_UpdateSegmentCount( file.offhandUIPrefabs["offhand4"]["bar"], 1, 0.05 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bar"], 0.0 )
 		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["bg"], 0.0 )
+		BasicImageBar_SetFillFrac( file.offhandUIPrefabs["offhand4"]["icon"], 0.0 )
 	}
 	#endif
 	RuiSetFloat3( file.ruis["offhand4"], "msgColor", GetAccentColor(true) )
