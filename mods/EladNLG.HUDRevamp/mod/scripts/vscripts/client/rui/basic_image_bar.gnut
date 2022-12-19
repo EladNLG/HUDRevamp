@@ -91,7 +91,7 @@ void function BasicImageBar_SetColor( BarTopoData data, vector color, float alph
     }
 }
 
-BarTopoData function BasicImageBar_CreateRuiTopo_Flat( vector posOffset, vector angles, float hudWidth, float hudHeight, int direction = eDirection.right, bool createRui = true, int order = -1 )
+BarTopoData function BasicImageBar_CreateRuiTopo_Flat( vector posOffset, float hudWidth, float hudHeight, int direction = eDirection.right, bool createRui = true, int order = -1 )
 {
     if (hudWidth < 0 || hudHeight < 0)
     {
@@ -100,19 +100,19 @@ BarTopoData function BasicImageBar_CreateRuiTopo_Flat( vector posOffset, vector 
     float height = COCKPIT_RUI_HEIGHT * hudHeight
     float width = COCKPIT_RUI_WIDTH * hudWidth
     // we keep roll as-is in case we want a bar that goes down/up or right to left.
-    vector _angles = Vector( angles.y * COCKPIT_RUI_HEIGHT, -angles.x * COCKPIT_RUI_WIDTH, angles.z )
+    //vector _angles = Vector( angles.y * COCKPIT_RUI_HEIGHT, -angles.x * COCKPIT_RUI_WIDTH, angles.z )
 
-    var topo = CreateWorldTopo( posOffset, _angles, width, height )
+    var topo = RuiTopology_CreatePlane( posOffset - <width / 2, height / 2, 0>, <width, 0, 0>, <0, -height, 0>, false )
 
     BarTopoData data
     data.position = posOffset
     data.size = Vector( width, height, 0.0 )
-    data.angles = _angles
+    data.angles = <0,0,0>
 
     TopoData topoData
     topoData.position = posOffset
     topoData.size = Vector( width, height, 0.0 )
-    topoData.angles = _angles
+    topoData.angles = <0,0,0>
     topoData.topo = topo
     data.direction = direction 
     data.isFlat = true
@@ -160,6 +160,7 @@ BarTopoData function BasicImageBar_CreateRuiTopo(vector posOffset, vector angles
     if (createRui)
     {
         var rui = RuiCreate( $"ui/basic_image.rpak", data.topoData[0].topo, RUI_DRAW_COCKPIT, order )
+        //RuiSetImage( rui, "basicImage", $"rui/gradient_lr_rl_menu" )
         data.imageRuis.append(rui)
     }
 
